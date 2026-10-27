@@ -109,7 +109,38 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 
 /* Semana: indicadores compactos numa coluna fixa à esquerda, conteúdo à direita */
 .semana { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 24px; align-items: start; }
-.kpis { position: sticky; top: 84px; background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 2px 0; }
+.side { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100dvh - 100px); overflow-y: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
+.side::-webkit-scrollbar { display: none; }
+.kpis { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 2px 0; }
+/* Avisos e férias */
+.box { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 6px 12px 8px; font-size: 12px; }
+.box-head { display: flex; align-items: center; gap: 6px; width: 100%; border: 0; background: transparent; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--ink); text-align: left; line-height: 1.3; }
+.box-head .ic { width: 14px; height: 14px; color: var(--fog); }
+.box-head .mark { margin-left: auto; width: 8px; height: 8px; border-radius: 2px; background: var(--warn); flex: none; }
+.box-head .chev { margin-left: auto; width: 12px; height: 12px; color: var(--silver); flex: none; transition: transform .15s; }
+.box-head .mark + .chev { margin-left: 0; }
+.box.open .box-head .chev { transform: rotate(90deg); }
+.box-body { margin-top: 4px; color: var(--ash); line-height: 1.45; }
+.box:not(.open) .box-body { display: none; }
+.aviso-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.box .stamp { color: var(--silver); font-size: 11px; margin-top: 4px; }
+.box textarea, .box input { width: 100%; border: 1px solid var(--hairline); border-radius: 6px; padding: 6px 8px; font-size: 12px; background: var(--paper); color: var(--ink); line-height: 1.4; }
+.box textarea:focus, .box input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
+.box textarea { min-height: 96px; resize: vertical; }
+.box .mini { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; color: var(--blue); font-size: 12px; font-weight: 500; padding: 4px 0; }
+.box .mini:hover { text-decoration: underline; }
+.box .mini.quiet { color: var(--fog); }
+.box .acts { display: flex; gap: 12px; margin-top: 4px; }
+.ferias-item { display: flex; align-items: flex-start; gap: 6px; padding: 5px 0; border-top: 1px solid var(--hairline); }
+.ferias-item:first-child { border-top: 0; }
+.ferias-item .nm { font-weight: 600; color: var(--ink); display: block; line-height: 1.3; }
+.ferias-item .dt { color: var(--fog); display: block; line-height: 1.3; }
+.ferias-item.now .dt { color: var(--ok-text); font-weight: 600; }
+.ferias-item .rm { margin-left: auto; border: 0; background: transparent; color: var(--silver); width: 20px; height: 20px; border-radius: 4px; display: grid; place-items: center; padding: 0; flex: none; }
+.ferias-item .rm:hover { color: var(--crit-text); background: var(--mist); }
+.ferias-form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.ferias-form label { font-size: 11px; color: var(--fog); display: block; margin-bottom: 2px; }
+.readonly .box .mini, .readonly .ferias-item .rm { display: none; }
 .kpi { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 12px; }
 .kpi + .kpi { border-top: 1px solid var(--hairline); }
 .kpi .label { font-size: 12px; color: var(--fog); line-height: 1.3; }
@@ -117,7 +148,8 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .kpi.warn .value { color: var(--warn-text); } .kpi.crit .value { color: var(--crit-text); } .kpi.ok .value { color: var(--ok-text); }
 @media (max-width: 900px) {
   .semana { grid-template-columns: 1fr; gap: 24px; }
-  .kpis { position: static; display: grid; grid-template-columns: repeat(3, 1fr); padding: 0; overflow: hidden; }
+  .side { position: static; max-height: none; overflow: visible; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); padding: 0; overflow: hidden; }
   .kpi { flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; }
   .kpi + .kpi { border-top: 0; }
   .kpi:nth-child(n+4) { border-top: 1px solid var(--hairline); }
@@ -187,11 +219,11 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 /* Por frente: um cartão por frente, faixa de título na cor da área */
 .frentes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; }
 .panel { background: var(--fcs, var(--paper)); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 0 var(--card-pad) var(--card-pad); display: flex; flex-direction: column; overflow: hidden; }
-.panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; margin: 0 calc(-1 * var(--card-pad)); padding: 20px var(--card-pad) 18px; background: var(--fc); }
-.panel-head h2 { font-size: 22px; font-weight: 700; color: var(--fct); }
+.panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; margin: 0 calc(-1 * var(--card-pad)) 4px; padding: 12px var(--card-pad); background: var(--fc); }
+.panel-head h2 { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--fct); }
 .panel-head .cnt { grid-column: 2; grid-row: 1; font-size: 13px; color: var(--fct2); font-weight: 500; white-space: nowrap; }
 .panel.gray { --fct: var(--ink); --fct2: var(--ash); }
-.panel .hgroup h3 { font-size: 13px; font-weight: 600; color: var(--ash); padding: 16px 0 6px; line-height: 1.4; }
+.panel .hgroup h3 { font-size: 13px; font-weight: 600; color: var(--ash); padding: 12px 0 4px; line-height: 1.4; }
 .panel .hgroup h3 .num { color: var(--fog); font-weight: 400; margin-left: 6px; }
 .panel .add { padding-top: 20px; margin-top: auto; }
 
@@ -331,7 +363,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     grip: '<svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></svg>',
   };
 
-  const state = { projects: {}, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
+  const state = { projects: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -428,6 +460,17 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (state.db) { try { await state.db.doc('projetos/' + p.id).delete(); } catch (e) { /* já refletido localmente */ } }
   }
   const setSaveState = t => { const el = $('#saveState'); if (el) el.textContent = t; };
+  // Avisos e férias: documentos especiais na mesma coleção (ids começam com "_")
+  let metaTimer = null;
+  function persistMeta(id, immediate) {
+    const body = Object.assign({}, state.meta[id], { atualizadoEm: new Date().toISOString() });
+    state.meta[id] = body;
+    const save = async () => { if (!state.db) return; try { await state.db.doc('projetos/' + id).set(body); } catch (e) { /* mantém local; snapshot corrige */ } };
+    clearTimeout(metaTimer); if (immediate) return save(); metaTimer = setTimeout(save, 600);
+  }
+  const feriasAtivas = () => { const t = today(); return (state.meta._ferias.itens || []).filter(i => i.fim && parseISO(i.fim) && parseISO(i.fim) >= t).slice().sort((a, b) => String(a.inicio).localeCompare(String(b.inicio))); };
+  const emFerias = i => { const t = today(); const a = parseISO(i.inicio), b = parseISO(i.fim); return a && b && a <= t && t <= b; };
+  const periodo = i => { const a = parseISO(i.inicio), b = parseISO(i.fim); if (!a || !b) return ''; return a.getMonth() === b.getMonth() ? `${String(a.getDate()).padStart(2, '0')} a ${fmtDay(b)}` : `${fmtDay(a)} a ${fmtDay(b)}`; };
 
   // ---------- Render ----------
   function renderFilters() {
@@ -445,6 +488,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     $('#weekLabel').textContent = weekLabel();
     renderFilters();
     const c = $('#content');
+    const ae = document.activeElement;
+    if (ae && ae.dataset && ae.dataset.meta && c.contains(ae)) return; // digitando em avisos/férias: não redesenha
     c.setAttribute('aria-labelledby', 'tab-' + state.view);
     if (!state.loaded) { c.innerHTML = ''; return; }
     if (state.view === 'semana') c.innerHTML = viewSemana();
@@ -493,13 +538,16 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       return filterActive() ? `<div class="empty">Nenhuma pauta corresponde à busca.</div>` : `<div class="empty">Nenhum projeto cadastrado ainda. Use “Novo projeto” para incluir a primeira pauta da área.</div>`;
     }
     return `<div class="semana">
-      <aside class="kpis" aria-label="Indicadores da semana">
+      <aside class="side" aria-label="Indicadores, avisos e férias">
+      <div class="kpis">
         <div class="kpi"><span class="label">Em andamento</span><span class="value num">${nAnd}</span></div>
         <div class="kpi"><span class="label">Prioridade agora</span><span class="value num">${agora.length}</span></div>
         <div class="kpi ${nRisk ? 'warn' : ''}"><span class="label">Atenção ou crítico</span><span class="value num">${nRisk}</span></div>
         <div class="kpi ${nLate ? 'crit' : ''}"><span class="label">Atrasados</span><span class="value num">${nLate}</span></div>
         <div class="kpi ${nStale ? 'warn' : ''}"><span class="label">Sem atualização há ${STALE_DAYS} dias</span><span class="value num">${nStale}</span></div>
         <div class="kpi ${done.length ? 'ok' : ''}"><span class="label">Concluídos na semana</span><span class="value num">${done.length}</span></div>
+      </div>
+      ${avisosHTML()}${feriasHTML()}
       </aside>
       <div class="semana-main">
       <section class="block">${head('Prioridades da semana', 'O que está no horizonte “Agora”. Abra um projeto para atualizar o próximo passo.')}
@@ -511,6 +559,22 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       <section class="block">${head('Concluídos na semana', 'Últimos 7 dias.')}
         ${done.length ? groupByFrente(done, true) : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
       </div></div>`;
+  }
+
+  function avisosHTML() {
+    const a = state.meta._avisos || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.avisosEdit && state.canWrite !== false;
+    const open = edit || (state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen);
+    const body = edit
+      ? `<textarea data-meta="avisos" id="avisosText" aria-label="Avisos importantes" placeholder="Escreva os avisos da semana">${esc(a.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="avisosDone">Concluir</button></div>`
+      : `${txt ? `<div class="aviso-text">${esc(txt)}</div>` : '<div class="aviso-text" style="color:var(--silver)">Nenhum aviso.</div>'}${a.atualizadoEm ? `<div class="stamp">Atualizado ${new Date(a.atualizadoEm).toLocaleDateString('pt-BR')}</div>` : ''}<div class="acts"><button class="mini" type="button" id="avisosEdit">${txt ? 'Editar' : 'Escrever aviso'}</button></div>`;
+    return `<section class="box avisos ${open ? 'open' : ''}"><button class="box-head" type="button" id="avisosToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>Avisos importantes${txt && !open ? '<span class="mark" aria-label="há avisos"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
+  }
+  function feriasHTML() {
+    const itens = feriasAtivas(); const form = state.ui.feriasForm && state.canWrite !== false;
+    const list = itens.length ? itens.map(i => `<div class="ferias-item ${emFerias(i) ? 'now' : ''}"><span><span class="nm">${esc(i.nome)}</span><span class="dt">${periodo(i)}${emFerias(i) ? ' · em férias' : ''}</span></span><button class="rm" type="button" data-fr-rm="${esc(i.id)}" aria-label="Remover férias de ${esc(i.nome)}">${I.x}</button></div>`).join('') : '<div style="color:var(--silver)">Ninguém de férias ou com férias marcadas.</div>';
+    const f = form ? `<div class="ferias-form"><div><label for="frNome">Nome</label><input id="frNome" data-meta="fform" placeholder="Quem"></div><div><label for="frIni">Início</label><input id="frIni" type="date" data-meta="fform"></div><div><label for="frFim">Fim</label><input id="frFim" type="date" data-meta="fform"></div><div class="acts"><button class="mini" type="button" id="feriasSave">Salvar</button><button class="mini quiet" type="button" id="feriasCancel">Cancelar</button></div></div>`
+      : `<div class="acts"><button class="mini" type="button" id="feriasAdd">${I.plus}<span>Adicionar</span></button></div>`;
+    return `<section class="box ferias open"><div class="box-head"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>Férias do time</div><div class="box-body">${list}${f}</div></section>`;
   }
 
   function viewFrentes() {
@@ -634,8 +698,25 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const ex = e.target.closest('#btnExcluir'); if (ex) { if (ex.dataset.arm) { remove(p); } else { ex.dataset.arm = '1'; ex.querySelector('span').textContent = 'Confirmar exclusão'; } return; }
     if (e.target.closest('#notasToggle')) { $('#notasField').classList.remove('collapsed'); $('#f-notas').focus(); return; }
   });
+  // Avisos e férias
+  document.addEventListener('click', e => {
+    if (e.target.closest('#avisosToggle')) { const txt = String(state.meta._avisos.texto || '').trim(); const cur = state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen; state.ui.avisosOpen = !cur; if (!state.ui.avisosOpen) state.ui.avisosEdit = false; render(); return; }
+    if (e.target.closest('#avisosEdit')) { if (state.canWrite === false) return; state.ui.avisosEdit = true; state.ui.avisosOpen = true; render(); const t = $('#avisosText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
+    if (e.target.closest('#avisosDone')) { state.ui.avisosEdit = false; if (!String(state.meta._avisos.texto || '').trim()) state.ui.avisosOpen = null; persistMeta('_avisos', true); render(); return; }
+    if (e.target.closest('#feriasAdd')) { if (state.canWrite === false) return; state.ui.feriasForm = true; render(); const n = $('#frNome'); if (n) n.focus(); return; }
+    if (e.target.closest('#feriasCancel')) { state.ui.feriasForm = false; render(); return; }
+    if (e.target.closest('#feriasSave')) {
+      const nome = $('#frNome').value.trim(), ini = $('#frIni').value, fim = $('#frFim').value;
+      if (!nome || !ini || !fim) { $('#frNome').focus(); return; }
+      const itens = (state.meta._ferias.itens || []).filter(i => i.fim && parseISO(i.fim) >= today());
+      itens.push({ id: 'f' + Date.now().toString(36), nome, inicio: ini <= fim ? ini : fim, fim: ini <= fim ? fim : ini });
+      state.meta._ferias.itens = itens; state.ui.feriasForm = false; persistMeta('_ferias', true); render(); return;
+    }
+    const rm = e.target.closest('[data-fr-rm]'); if (rm) { if (state.canWrite === false) return; state.meta._ferias.itens = (state.meta._ferias.itens || []).filter(i => i.id !== rm.dataset.frRm); persistMeta('_ferias', true); render(); return; }
+  });
   document.addEventListener('input', e => {
     if (e.target.id === 'q') { state.q = e.target.value; render(); return; }
+    if (e.target.dataset.meta === 'avisos') { if (state.canWrite === false) return; state.meta._avisos.texto = e.target.value; persistMeta('_avisos', false); return; }
     const p = state.selected && state.projects[state.selected]; if (!p || state.canWrite === false) return;
     const f = e.target.dataset.f;
     if (f) {
@@ -678,6 +759,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
+  document.addEventListener('focusout', e => { if (e.target && e.target.dataset && e.target.dataset.meta === 'avisos') setTimeout(() => { if (!document.activeElement || document.activeElement.dataset.meta !== 'avisos') render(); }, 0); });
 
   // ---------- Reordenar: arrastar pela alça (mouse e toque) ----------
   const drag = { src: null, ghost: null, list: null, origList: null, panel: null, startY: 0, startX: 0, offY: 0, active: false, suppressClick: false, pointerId: null };
@@ -784,6 +866,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const stepsList = p => { const st = parseSteps(p.proximoPasso); if (!st.length) return ''; return `<ul style="margin:4px 0 0 18px;padding:0">${st.map(x => `<li style="${F}font-size:11pt;color:#444;margin:0 0 2px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${esc(x.text)}</li>`).join('')}</ul>`; };
     let h = `<div style="${F}color:#222"><h1 style="${F}font-size:16pt;color:#1f3864;margin:0 0 2px">Weekly Review · ${esc(weekLabel())}</h1>`;
     h += `<p style="${F}font-size:10pt;color:#666;margin:0 0 12px">Painel Semanal de Pautas</p>`;
+    const aviso = String(state.meta._avisos.texto || '').trim();
+    if (aviso) h += h2('Avisos importantes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
     frentes.forEach(({ f, items }) => {
       h += h2(f.nome) + '<ul style="margin:0 0 0 18px;padding:0">';
       items.forEach(p => {
@@ -795,11 +879,15 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (atencao.length) { h += h2('Pontos de atenção') + '<ul style="margin:0 0 0 18px;padding:0">'; atencao.forEach(p => { h += li(`<b>${esc(p.titulo)}</b> <span style="color:#666">(${esc(fr(p.frente).curto)})</span> — ${esc(statusTxt(p))}${p.prazo ? ' · prazo ' + fmtDate(p.prazo) : ''}`); }); h += '</ul>'; }
     if (fila.length) { h += h2('Na fila') + '<ul style="margin:0 0 0 18px;padding:0">'; fila.forEach(p => { h += li(`${esc(p.titulo)} <span style="color:#666">(${esc(fr(p.frente).curto)})</span>`); }); h += '</ul>'; }
     if (done.length) { h += h2('Concluídos na semana') + '<ul style="margin:0 0 0 18px;padding:0">'; done.forEach(p => { h += li(`${esc(p.titulo)} <span style="color:#666">(${esc(fr(p.frente).curto)})</span>`); }); h += '</ul>'; }
+    const fer = feriasAtivas();
+    if (fer.length) { h += h2('Férias do time') + '<ul style="margin:0 0 0 18px;padding:0">'; fer.forEach(i => { h += li(`${esc(i.nome)} <span style="color:#666">— ${esc(periodo(i))}${emFerias(i) ? ' (em férias)' : ''}</span>`); }); h += '</ul>'; }
     return h + '</div>';
   }
   function resumoTexto() {
     const { frentes, atencao, done, fila } = resumoDados();
     const L = [`WEEKLY REVIEW · ${weekLabel()}`, ''];
+    const aviso = String(state.meta._avisos.texto || '').trim();
+    if (aviso) { L.push('AVISOS IMPORTANTES'); L.push(aviso); L.push(''); }
     frentes.forEach(({ f, items }) => {
       L.push(f.nome.toUpperCase());
       items.forEach(p => {
@@ -811,7 +899,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     });
     if (atencao.length) { L.push('PONTOS DE ATENÇÃO'); atencao.forEach(p => L.push(`• ${p.titulo} (${fr(p.frente).curto}) — ${statusTxt(p)}`)); L.push(''); }
     if (fila.length) { L.push('NA FILA'); fila.forEach(p => L.push(`• ${p.titulo} (${fr(p.frente).curto})`)); L.push(''); }
-    if (done.length) { L.push('CONCLUÍDOS NA SEMANA'); done.forEach(p => L.push(`• ${p.titulo} (${fr(p.frente).curto})`)); }
+    if (done.length) { L.push('CONCLUÍDOS NA SEMANA'); done.forEach(p => L.push(`• ${p.titulo} (${fr(p.frente).curto})`)); L.push(''); }
+    const fer = feriasAtivas();
+    if (fer.length) { L.push('FÉRIAS DO TIME'); fer.forEach(i => L.push(`• ${i.nome} — ${periodo(i)}${emFerias(i) ? ' (em férias)' : ''}`)); }
     return L.join('\n').trim();
   }
   function copiarResumo(btn) {
@@ -905,7 +995,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
     state.db.collection('projetos').onSnapshot(snap => {
       const next = {};
-      snap.docs.forEach(d => { if (d.exists) next[d.id] = norm(d.id, d.data()); });
+      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_avisos' && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
       state.projects = next; state.loaded = true;
       if (shared && state.canWrite !== false) loading.hidden = true;
       render();
