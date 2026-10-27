@@ -64,6 +64,7 @@ Cada pauta é um documento em `projetos/<id>` com os campos:
 
 - **Semana**: indicadores, prioridades do "Agora", pontos de atenção, fila e concluídos.
 - **Por frente**: um cartão por frente; arraste pautas entre Agora, Próximo e Depois.
+- **Responsáveis**: um cartão por pessoa, com as pautas ativas por horizonte e a sigla da frente.
 - **Prazos**: vencidos, por mês e sem prazo.
 - **Concluídos**: histórico.
 - **Copiar resumo**: coloca na área de transferência um resumo formatado (HTML e texto) para colar no Outlook.

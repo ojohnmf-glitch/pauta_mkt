@@ -98,7 +98,6 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 .menu button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; text-align: left; padding: 9px 10px; border-radius: 6px; font-size: 14px; color: var(--ink); white-space: nowrap; }
 .menu button:hover, .menu button:focus-visible { background: var(--mist); }
 .menu .sw { width: 12px; height: 12px; border-radius: 3px; background: var(--fc); flex: none; }
-.menu .lead { color: var(--fog); margin-left: auto; font-size: 13px; }
 /* Soltar em outro horizonte (Por frente) */
 .hgroup.drop-target { box-shadow: inset 0 0 0 2px var(--blue); border-radius: 8px; }
 
@@ -132,7 +131,6 @@ section.block { margin-bottom: var(--section); }
 .block-head h2.crit { color: var(--crit-text); }
 .frente-group { background: var(--fcs, var(--paper)); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 0 var(--card-pad) 8px; margin-bottom: 16px; overflow: hidden; }
 .frente-head { display: flex; align-items: center; gap: var(--gap); margin: 0 calc(-1 * var(--card-pad)) 4px; padding: 12px var(--card-pad); background: var(--fc); font-size: 15px; font-weight: 600; color: var(--fct); line-height: 1.4; }
-.frente-head .lead { font-weight: 400; color: var(--fct2); }
 .frente-head .cnt { margin-left: auto; font-weight: 500; color: var(--fct2); font-size: 13px; }
 .frente-group.gray { --fct: var(--ink); --fct2: var(--ash); }
 
@@ -180,6 +178,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .row:hover .chev { color: var(--blue); }
 .chip { display: inline-block; font-size: 13px; line-height: 1.4; padding: 1px 8px; border-radius: var(--r-btn); border: 1px solid var(--hairline); color: var(--ash); font-weight: 400; white-space: nowrap; }
 .chip.etapa { color: var(--fog); }
+.chip.fr { display: inline-flex; align-items: center; gap: 6px; }
+.chip.fr .sw { width: 8px; height: 8px; border-radius: 2px; background: var(--fc); flex: none; }
 .empty { color: var(--fog); font-size: 15px; line-height: 1.6; padding: 4px 0; max-width: 540px; }
 .frente-group .empty, .panel .empty { padding: 8px 0; }
 
@@ -188,8 +188,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .panel { background: var(--fcs, var(--paper)); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 0 var(--card-pad) var(--card-pad); display: flex; flex-direction: column; overflow: hidden; }
 .panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; margin: 0 calc(-1 * var(--card-pad)); padding: 20px var(--card-pad) 18px; background: var(--fc); }
 .panel-head h2 { font-size: 22px; font-weight: 700; color: var(--fct); }
-.panel-head .lead { grid-column: 1; font-size: 15px; color: var(--fct2); line-height: 1.5; }
 .panel-head .cnt { grid-column: 2; grid-row: 1; font-size: 13px; color: var(--fct2); font-weight: 500; white-space: nowrap; }
+.panel.gray { --fct: var(--ink); --fct2: var(--ash); }
 .panel .hgroup h3 { font-size: 13px; font-weight: 600; color: var(--ash); padding: 16px 0 6px; line-height: 1.4; }
 .panel .hgroup h3 .num { color: var(--fog); font-weight: 400; margin-left: 6px; }
 .panel .add { padding-top: 20px; margin-top: auto; }
@@ -284,6 +284,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     <nav class="tabs" role="tablist" aria-label="Visões">
       <button class="tab" role="tab" id="tab-semana" data-view="semana" aria-selected="true" aria-controls="content"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Semana</span></button>
       <button class="tab" role="tab" id="tab-frentes" data-view="frentes" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 10h18"/></svg><span>Por frente</span></button>
+      <button class="tab" role="tab" id="tab-responsaveis" data-view="responsaveis" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 0 1 0 7M21 20c0-3-1.8-5.2-4.5-5.8"/></svg><span>Responsáveis</span></button>
       <button class="tab" role="tab" id="tab-prazos" data-view="prazos" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Prazos</span></button>
       <button class="tab" role="tab" id="tab-concluidos" data-view="concluidos" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Concluídos</span></button>
     </nav>
@@ -317,7 +318,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const ETAPAS = { nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', em_revisao: 'Em revisão', pausado: 'Pausado', concluido: 'Concluído' };
   const HORIZ = { agora: 'Agora', proximo: 'Próximo', depois: 'Depois' };
   const SAUDE = { ok: 'No prazo', atencao: 'Atenção', critico: 'Crítico' };
-  const VIEWS = ['semana', 'frentes', 'prazos', 'concluidos'];
+  const VIEWS = ['semana', 'frentes', 'responsaveis', 'prazos', 'concluidos'];
   const STALE_DAYS = 14;
   const I = {
     chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
@@ -447,17 +448,19 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (!state.loaded) { c.innerHTML = ''; return; }
     if (state.view === 'semana') c.innerHTML = viewSemana();
     else if (state.view === 'frentes') c.innerHTML = viewFrentes();
+    else if (state.view === 'responsaveis') c.innerHTML = viewResponsaveis();
     else if (state.view === 'prazos') c.innerHTML = viewPrazos();
     else c.innerHTML = viewConcluidos();
     if (state.selected && state.projects[state.selected]) renderDrawer(state.projects[state.selected], true);
   }
 
-  function rowHTML(p, compact) {
+  function rowHTML(p, compact, showFrente, hideWho) {
     const dc = dueClass(p);
-    const chips = p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('');
+    const f = fr(p.frente);
+    const chips = (showFrente ? `<span class="chip fr" style="--fc:${f.cor}"><span class="sw" aria-hidden="true"></span>${f.curto}</span>` : '') + p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('');
     const etapa = p.etapa !== 'em_andamento' ? `<span class="chip etapa">${ETAPAS[p.etapa] || esc(p.etapa)}</span>` : '';
     const due = p.prazo ? `<span class="due ${dc}"><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ' · atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : '<span class="due"></span>';
-    const sub = compact ? '' : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
+    const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
     return `<button class="row" data-open="${esc(p.id)}" type="button">
       <span class="grip" data-grip title="Arrastar para reordenar" aria-hidden="true">${I.grip}</span>
       <span class="dot ${p.saude}" aria-hidden="true"></span>
@@ -469,7 +472,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const items = list.filter(p => p.frente === f.id);
       if (!items.length) return '';
       const style = gray ? '--fc:var(--f-fila);--fcs:var(--f-fila-soft)' : `--fc:${f.cor};--fcs:${f.soft}`;
-      return `<div class="frente-group${gray ? ' gray' : ''}" style="${style}"><div class="frente-head">${f.nome} <span class="lead">· ${f.lider}</span><span class="cnt num">${items.length}</span></div>
+      return `<div class="frente-group${gray ? ' gray' : ''}" style="${style}"><div class="frente-head">${f.nome}<span class="cnt num">${items.length}</span></div>
         <div class="list">${items.map(p => rowHTML(p, compact)).join('')}</div></div>`;
     }).join('');
   }
@@ -516,8 +519,22 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         const g = items.filter(p => p.horizonte === h);
         return `<div class="hgroup" data-h="${h}"><h3>${HORIZ[h]}<span class="num">${g.length}</span></h3><div class="list">${g.length ? g.map(p => rowHTML(p, true)).join('') : '<div class="empty">Nenhum projeto. Arraste uma pauta para cá.</div>'}</div></div>`;
       }).join('');
-      return `<div class="panel" style="--fc:${f.cor};--fcs:${f.soft}"><div class="panel-head"><h2>${f.nome}</h2><span class="cnt num">${items.length} ativos</span><span class="lead">Líder ${f.lider}</span></div>${groups}
+      return `<div class="panel" style="--fc:${f.cor};--fcs:${f.soft}"><div class="panel-head"><h2>${f.nome}</h2><span class="cnt num">${items.length} ativas</span></div>${groups}
         <div class="add"><button class="btn" type="button" data-new="${f.id}">${I.plus}<span>Novo em ${f.curto}</span></button></div></div>`;
+    }).join('')}</div>`;
+  }
+
+  function viewResponsaveis() {
+    const act = active();
+    if (!act.length) return `<div class="empty">${filterActive() ? 'Nenhuma pauta corresponde à busca.' : 'Nenhuma pauta ativa.'}</div>`;
+    const by = {};
+    act.forEach(p => { const k = String(p.responsavel || '').trim(); (by[k] = by[k] || []).push(p); });
+    const names = Object.keys(by).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'pt-BR'));
+    return `<div class="frentes-grid">${names.map(n => {
+      const items = by[n]; const late = items.filter(isLate).length; const risk = items.filter(p => p.saude !== 'ok').length;
+      const meta = [`${items.length} ativa${items.length > 1 ? 's' : ''}`, late ? `${late} atrasada${late > 1 ? 's' : ''}` : '', risk ? `${risk} em atenção` : ''].filter(Boolean).join(' · ');
+      const groups = ['agora', 'proximo', 'depois'].map(h => { const g = items.filter(p => p.horizonte === h); if (!g.length) return ''; return `<div class="hgroup" data-h="${h}"><h3>${HORIZ[h]}<span class="num">${g.length}</span></h3><div class="list">${g.map(p => rowHTML(p, true, true, true)).join('')}</div></div>`; }).join('');
+      return `<div class="panel gray" style="--fc:var(--f-fila);--fcs:var(--paper)"><div class="panel-head"><h2>${n ? esc(n) : 'Sem responsável'}</h2><span class="cnt num">${meta}</span></div>${groups}</div>`;
     }).join('')}</div>`;
   }
 
@@ -594,7 +611,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
   function showMenu(on) {
     const m = $('#novoMenu'), b = $('#btnNovo');
-    if (on) { m.innerHTML = '<div class="menu-title">Nova pauta em qual frente?</div>' + FRENTES.map(f => `<button type="button" role="menuitem" data-new="${f.id}" style="--fc:${f.cor}"><span class="sw" aria-hidden="true"></span>${f.nome}<span class="lead">${f.lider}</span></button>`).join(''); }
+    if (on) { m.innerHTML = '<div class="menu-title">Nova pauta em qual frente?</div>' + FRENTES.map(f => `<button type="button" role="menuitem" data-new="${f.id}" style="--fc:${f.cor}"><span class="sw" aria-hidden="true"></span>${f.nome}</button>`).join(''); }
     m.hidden = !on; b.setAttribute('aria-expanded', on);
     if (on) { const first = m.querySelector('button'); if (first) first.focus(); }
   }
@@ -767,9 +784,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     let h = `<div style="${F}color:#222"><h1 style="${F}font-size:16pt;color:#1f3864;margin:0 0 2px">Weekly Review · ${esc(weekLabel())}</h1>`;
     h += `<p style="${F}font-size:10pt;color:#666;margin:0 0 12px">Painel Semanal de Pautas</p>`;
     frentes.forEach(({ f, items }) => {
-      h += h2(`${f.nome} · ${f.lider}`) + '<ul style="margin:0 0 0 18px;padding:0">';
+      h += h2(f.nome) + '<ul style="margin:0 0 0 18px;padding:0">';
       items.forEach(p => {
-        const meta = [statusTxt(p), p.prazo ? 'prazo ' + fmtDate(p.prazo) : '', p.responsavel && p.responsavel !== f.lider ? 'resp. ' + p.responsavel : ''].filter(Boolean).join(' · ');
+        const meta = [p.responsavel ? 'resp. ' + p.responsavel : '', statusTxt(p), p.prazo ? 'prazo ' + fmtDate(p.prazo) : ''].filter(Boolean).join(' · ');
         h += li(`<b>${esc(p.titulo)}</b>${meta ? ` <span style="color:#666">— ${esc(meta)}</span>` : ''}`, stepsList(p));
       });
       h += '</ul>';
@@ -783,9 +800,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const { frentes, atencao, done, fila } = resumoDados();
     const L = [`WEEKLY REVIEW · ${weekLabel()}`, ''];
     frentes.forEach(({ f, items }) => {
-      L.push(`${f.nome.toUpperCase()} · ${f.lider}`);
+      L.push(f.nome.toUpperCase());
       items.forEach(p => {
-        const meta = [statusTxt(p), p.prazo ? 'prazo ' + fmtDate(p.prazo) : ''].filter(Boolean).join(' · ');
+        const meta = [p.responsavel ? 'resp. ' + p.responsavel : '', statusTxt(p), p.prazo ? 'prazo ' + fmtDate(p.prazo) : ''].filter(Boolean).join(' · ');
         L.push(`• ${p.titulo}${meta ? ' — ' + meta : ''}`);
         parseSteps(p.proximoPasso).forEach(x => L.push(`    ${x.kind === 'check' ? (x.done ? '☑' : '☐') : '-'} ${x.text}`));
       });
