@@ -7,6 +7,7 @@
 <meta name="description" content="Acompanhamento semanal das pautas de marketing: prioridades, saúde, prazos e próximos passos por frente.">
 <meta name="theme-color" content="#f2f5f7">
 <style>html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<script src="config.js"></script>
 </head>
 <body>
 <style>
@@ -837,16 +838,49 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     };
   }
 
+  // Supabase (site hospedado com banco compartilhado pelo time): tabela public.projetos (id text, data jsonb)
+  function supabaseDB(cfg) {
+    const client = window.supabase.createClient(cfg.url, cfg.anonKey);
+    const T = 'projetos';
+    let listener = null, onErr = null, timer = null;
+    const load = async () => {
+      const { data, error } = await client.from(T).select('id,data');
+      if (error) { if (onErr) onErr({ code: error.message || error.code || 'erro' }); return; }
+      if (listener) listener({ docs: (data || []).map(r => ({ id: r.id, exists: true, data: () => r.data || {} })) });
+    };
+    const reload = () => { clearTimeout(timer); timer = setTimeout(load, 150); };
+    return {
+      collection: () => ({ onSnapshot: (cb, err) => {
+        listener = cb; onErr = err; load();
+        client.channel('projetos-live').on('postgres_changes', { event: '*', schema: 'public', table: T }, reload).subscribe();
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reload(); });
+      } }),
+      doc: path => { const id = path.split('/').pop(); return {
+        set: async body => { const { error } = await client.from(T).upsert({ id, data: body, updated_at: new Date().toISOString() }); if (error) throw error; },
+        delete: async () => { const { error } = await client.from(T).delete().eq('id', id); if (error) throw error; } }; },
+    };
+  }
+  const loadScript = src => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+
   (async () => {
     const use = window.claude && window.claude.use ? n => window.claude.use(n).catch(() => null) : () => Promise.resolve(null);
     const [db, user] = await Promise.all([use('db'), use('user')]);
     const loading = $('#loading');
-    if (!db) {
-      // Sem o banco compartilhado (site hospedado fora do claude.ai): modo local
+    const cfg = window.PAUTAS_CONFIG || {};
+    let shared = !!db;
+    if (!db && cfg.supabaseUrl && cfg.supabaseAnonKey) {
+      // Site hospedado com Supabase configurado em config.js
+      try {
+        if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+        state.db = supabaseDB({ url: cfg.supabaseUrl, anonKey: cfg.supabaseAnonKey }); state.canWrite = true; shared = true;
+      } catch (x) { loading.textContent = 'Não foi possível carregar a biblioteca do Supabase. Verifique a conexão e recarregue.'; loading.className = 'notice'; }
+    }
+    if (!state.db && !db) {
+      // Sem banco compartilhado: modo local
       state.db = localDB(); state.canWrite = true;
-      loading.textContent = 'Modo local: as pautas ficam salvas apenas neste navegador. Para uso compartilhado pelo time, abra o painel pelo claude.ai ou conecte um banco externo.';
+      loading.textContent = 'Modo local: as pautas ficam salvas apenas neste navegador. Para uso compartilhado pelo time, abra o painel pelo claude.ai ou configure o Supabase em config.js.';
       loading.className = 'notice';
-    } else {
+    } else if (db) {
       state.db = db;
       try { state.canWrite = user ? await user.can('data.write') : null; } catch (x) { state.canWrite = null; }
       if (state.canWrite === false) { document.body.classList.add('readonly'); loading.textContent = 'Você está vendo o painel em modo leitura. Peça acesso de Contribuidor para editar.'; loading.className = 'notice'; $('#btnNovo').disabled = true; }
@@ -855,7 +889,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const next = {};
       snap.docs.forEach(d => { if (d.exists) next[d.id] = norm(d.id, d.data()); });
       state.projects = next; state.loaded = true;
-      if (db && state.canWrite !== false) loading.hidden = true;
+      if (shared && state.canWrite !== false) loading.hidden = true;
       render();
     }, err => { state.loaded = true; loading.textContent = 'A conexão com o banco caiu (' + (err && err.code || 'erro') + '). Recarregue a página.'; loading.hidden = false; render(); });
   })();

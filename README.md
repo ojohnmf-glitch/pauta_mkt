@@ -5,7 +5,7 @@ Painel de acompanhamento das pautas de marketing, organizado por frente
 com horizontes Agora / Próximo / Depois, saúde em semáforo, prazos,
 próximo passo com checklist e resumo formatado para e-mail.
 
-Arquivo único, sem dependências: `index.html`.
+Arquivos: `index.html` (o painel), `config.js` (chaves do banco compartilhado) e `supabase/` (SQL de estrutura e carga inicial).
 
 ## Hospedar no GitHub Pages
 
@@ -15,20 +15,39 @@ Arquivo único, sem dependências: `index.html`.
 
 ## Onde os dados ficam
 
-O painel escolhe o armazenamento ao abrir:
+O painel escolhe o armazenamento ao abrir, nesta ordem:
 
-| Onde a página é aberta | Armazenamento | Compartilhado com o time? |
+| Situação | Armazenamento | Compartilhado com o time? |
 |---|---|---|
-| Artifact no claude.ai | Banco do artifact (tempo real) | Sim, para quem tem acesso de Contribuidor |
-| GitHub Pages ou qualquer outro host | `localStorage` do navegador | Não. Cada pessoa vê só o que digitou no próprio navegador |
+| Aberto como artifact no claude.ai | Banco do artifact (tempo real) | Sim, para quem tem acesso de Contribuidor |
+| Hospedado, com `config.js` preenchido | Supabase (tempo real) | Sim, para quem tiver o link |
+| Hospedado, com `config.js` vazio | `localStorage` do navegador | Não. Cada pessoa vê só o que digitou no próprio navegador |
 
-Ou seja: hospedado fora do claude.ai, o painel funciona como ferramenta
-individual. Para uso compartilhado fora do claude.ai é preciso ligar um banco
-externo. Os pontos de integração estão isolados no final do `<script>`:
-a função `localDB()` implementa a interface mínima usada pelo painel
-(`collection().onSnapshot(cb)`, `doc(path).set(body)`, `doc(path).delete()`).
-Um adaptador equivalente para Firebase Firestore ou Supabase substitui essa
-função sem mexer no restante do código.
+## Ligar o Supabase (uso compartilhado no site hospedado)
+
+Leva uns 10 minutos. Tudo é feito no painel do Supabase e neste repositório.
+
+1. **Criar o projeto.** Em [supabase.com/dashboard](https://supabase.com/dashboard), *New project*. Escolha um nome (ex.: `pauta-mkt`), uma senha de banco (guarde, mas o site não usa) e a região *South America (São Paulo)*. Aguarde o projeto ficar pronto.
+2. **Criar a tabela e as permissões.** No menu lateral, *SQL Editor* → *New query*. Cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em *Run*. Deve terminar com *Success. No rows returned*.
+3. **Carregar as pautas atuais** (opcional, mas recomendado). Nova query, cole [`supabase/seed.sql`](supabase/seed.sql), *Run*. São as pautas exportadas do artifact em 27/10/2026. Pode rodar de novo depois: registros existentes são atualizados, não duplicados.
+4. **Copiar as chaves.** *Project Settings* (ícone de engrenagem) → *API*. Copie **Project URL** e a chave **anon public**.
+5. **Preencher `config.js`** neste repositório com os dois valores, entre aspas:
+
+   ```js
+   window.PAUTAS_CONFIG = {
+     supabaseUrl: "https://SEU-PROJETO.supabase.co",
+     supabaseAnonKey: "eyJ..."
+   };
+   ```
+
+   Faça o commit. O GitHub Pages republica em 1 a 2 minutos.
+6. **Conferir.** Abra o site. O aviso amarelo de "Modo local" não deve aparecer, e as pautas da carga inicial devem estar na tela. Abra em dois navegadores e edite num deles: o outro atualiza sozinho.
+
+### Sobre segurança
+
+A chave *anon* é feita para ficar no site; ela é pública por desenho. Quem decide o que pode ser lido ou alterado são as políticas de segurança por linha (RLS) criadas pelo `schema.sql`. A versão entregue **libera leitura e escrita para qualquer pessoa que tenha o link do painel**, o que equivale ao Trello com quadro aberto por link. Se isso não for aceitável, o próximo passo é o login por e-mail do Supabase (magic link) restrito aos endereços do time, com as políticas apontando para `auth.email()`. É uma mudança pequena no site e nas políticas.
+
+Para desligar o Supabase basta esvaziar os dois campos de `config.js`.
 
 ## Modelo de dados
 
