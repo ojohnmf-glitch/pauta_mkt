@@ -871,7 +871,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (!db && cfg.supabaseUrl && cfg.supabaseAnonKey) {
       // Site hospedado com Supabase configurado em config.js
       try {
-        if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+        if (!window.supabase) { try { await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'); } catch (x) { await loadScript('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'); } }
         state.db = supabaseDB({ url: cfg.supabaseUrl, anonKey: cfg.supabaseAnonKey }); state.canWrite = true; shared = true;
       } catch (x) { loading.textContent = 'Não foi possível carregar a biblioteca do Supabase. Verifique a conexão e recarregue.'; loading.className = 'notice'; }
     }
@@ -891,7 +891,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       state.projects = next; state.loaded = true;
       if (shared && state.canWrite !== false) loading.hidden = true;
       render();
-    }, err => { state.loaded = true; loading.textContent = 'A conexão com o banco caiu (' + (err && err.code || 'erro') + '). Recarregue a página.'; loading.hidden = false; render(); });
+    }, err => {
+      state.loaded = true; const msg = String(err && err.code || 'erro');
+      loading.textContent = /projetos|42P01|does not exist|schema cache/i.test(msg)
+        ? 'Tabela “projetos” não encontrada no Supabase. Rode o arquivo supabase/schema.sql no SQL Editor do projeto e recarregue.'
+        : 'A conexão com o banco caiu (' + msg + '). Recarregue a página.';
+      loading.className = 'notice'; loading.hidden = false; render();
+    });
   })();
 })();
 </script>
