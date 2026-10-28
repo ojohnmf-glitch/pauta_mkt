@@ -180,6 +180,19 @@ section.block { margin-bottom: var(--section); }
 .frente-head { display: flex; align-items: center; gap: var(--gap); margin: 0 calc(-1 * var(--card-pad)) 4px; padding: 12px var(--card-pad); background: var(--fc); font-size: 15px; font-weight: 600; color: var(--fct); line-height: 1.4; }
 .frente-head .cnt { margin-left: auto; font-weight: 400; color: var(--fct2); font-size: 13px; }
 .frente-group.gray { --fct: var(--ink); --fct2: var(--ash); }
+/* Recolher e expandir cartões */
+.frente-head, .panel-head { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.tg { display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -8px -4px 4px; border: 0; background: transparent; color: var(--fct2); border-radius: 6px; flex: none; }
+.tg svg { width: 14px; height: 14px; transition: transform .15s; }
+.tg:hover { color: var(--fct); }
+.collapsed .tg svg { transform: rotate(-90deg); }
+.frente-group.collapsed { padding-bottom: 0; }
+.frente-group.collapsed .frente-head, .panel.collapsed .panel-head { margin-bottom: 0; }
+.panel.collapsed { padding-bottom: 0; }
+.collapsed > .list, .collapsed > .hgroup, .collapsed > .add { display: none; }
+.panel-head .tg { grid-column: 3; grid-row: 1; }
+.filters .btn.text { margin-left: auto; padding: 8px 12px; font-size: 14px; }
+.filters .count + .btn.text { margin-left: 0; }
 
 /* Linhas de pauta */
 .list { display: flex; flex-direction: column; }
@@ -233,7 +246,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 /* Por frente: um cartão por frente, faixa de título na cor da área */
 .frentes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; }
 .panel { background: var(--fcs, var(--paper)); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 0 var(--card-pad) var(--card-pad); display: flex; flex-direction: column; overflow: hidden; }
-.panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; margin: 0 calc(-1 * var(--card-pad)) 4px; padding: 12px var(--card-pad); background: var(--fc); }
+.panel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 12px; align-items: center; margin: 0 calc(-1 * var(--card-pad)) 4px; padding: 12px var(--card-pad); background: var(--fc); }
 .panel-head h2 { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--fct); }
 .panel-head .cnt { grid-column: 2; grid-row: 1; font-size: 13px; color: var(--fct2); font-weight: 400; white-space: nowrap; }
 .panel.gray { --fct: var(--ink); --fct2: var(--ash); }
@@ -309,7 +322,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   @media (max-width: 760px) { @keyframes slide { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } } }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tab, .row, .seg button, .field input, .btn, .box .mini { transition: none; }
+  .tab, .row, .seg button, .field input, .btn, .box .mini, .tg svg { transition: none; }
   .btn:active, .tab:active, .seg button:active, .box .mini:active { transform: none; }
 }
 </style>
@@ -347,6 +360,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     <label class="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar pauta, marca ou responsável" aria-label="Buscar pauta" autocomplete="off"><button class="clear" id="qClear" type="button" aria-label="Limpar busca" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></label>
     <select id="respSel" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option></select>
     <span class="count" id="filterCount" role="status" aria-live="polite"></span>
+    <button class="btn text" id="btnToggleAll" type="button" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg><span id="toggleAllLabel">Recolher tudo</span></button>
   </div>
   <div id="content" role="tabpanel" aria-labelledby="tab-semana"></div>
 </main>
@@ -380,6 +394,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     grip: '<svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></svg>',
   };
 
+  let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
+  const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
+  const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
+  const cardAttrs = key => `data-key="${esc(key)}" class="${collapsed.has(key) ? ' collapsed' : ''}"`;
   const state = { projects: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -515,6 +533,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     else if (state.view === 'prazos') c.innerHTML = viewPrazos();
     else c.innerHTML = viewConcluidos();
     if (state.selected && state.projects[state.selected]) renderDrawer(state.projects[state.selected], true);
+    const cards = [...c.querySelectorAll('[data-key]')]; const btn = $('#btnToggleAll');
+    btn.hidden = !cards.length;
+    if (cards.length) { const allClosed = cards.every(el => collapsed.has(el.dataset.key)); $('#toggleAllLabel').textContent = allClosed ? 'Expandir tudo' : 'Recolher tudo'; btn.setAttribute('aria-expanded', !allClosed); }
   }
 
   function rowHTML(p, compact, showFrente, hideWho) {
@@ -530,12 +551,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       <span class="main"><span class="title"><span class="sr-only">${SAUDE[p.saude]}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips} ${etapa}</span>${sub}</span>
       ${due}${ringHTML(p)}${I.chev}</button>`;
   }
-  function groupByFrente(list, compact, gray) {
+  function groupByFrente(list, compact, gray, sec) {
     return FRENTES.map(f => {
       const items = list.filter(p => p.frente === f.id);
       if (!items.length) return '';
       const style = gray ? '--fc:var(--f-fila);--fcs:var(--f-fila-soft)' : `--fc:${f.cor};--fcs:${f.soft}`;
-      return `<div class="frente-group${gray ? ' gray' : ''}" style="${style}"><div class="frente-head">${f.nome}<span class="cnt num">${items.length}</span></div>
+      const key = `${state.view}:${sec || 'x'}:${f.id}`;
+      return `<div class="frente-group${gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="${style}"><div class="frente-head" data-toggle-card>${f.nome}<span class="cnt num">${items.length}</span>${TG}</div>
         <div class="list">${items.map(p => rowHTML(p, compact)).join('')}</div></div>`;
     }).join('');
   }
@@ -568,13 +590,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       </aside>
       <div class="semana-main">
       <section class="block">${head('Prioridades da semana', 'O que está no horizonte “Agora”. Abra um projeto para atualizar o próximo passo.')}
-        ${agora.length ? groupByFrente(agora) : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte.</div>'}</section>
+        ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte.</div>'}</section>
       <section class="block">${head('Pontos de atenção', `Fora do “Agora”: saúde amarela ou vermelha, prazo vencido ou sem atualização há mais de ${STALE_DAYS} dias. As pautas do “Agora” já mostram o estado acima.`)}
-        ${atencao.length ? groupByFrente(atencao) : '<div class="empty">Nenhum ponto de atenção fora do “Agora”.</div>'}</section>
+        ${atencao.length ? groupByFrente(atencao, false, false, 'atencao') : '<div class="empty">Nenhum ponto de atenção fora do “Agora”.</div>'}</section>
       <section class="block">${head('Na fila', 'Entra quando algo do “Agora” for concluído.')}
-        ${proximo.length ? groupByFrente(proximo, true, true) : '<div class="empty">Fila vazia.</div>'}</section>
+        ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia.</div>'}</section>
       <section class="block">${head('Concluídos na semana', 'Últimos 7 dias.')}
-        ${done.length ? groupByFrente(done, true) : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
+        ${done.length ? groupByFrente(done, true, false, 'done') : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
       </div></div>`;
   }
 
@@ -601,7 +623,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         const g = items.filter(p => p.horizonte === h);
         return `<div class="hgroup" data-h="${h}"><div class="hh"><h3>${HORIZ[h]}</h3><span class="num">${g.length}</span></div><div class="list">${g.length ? g.map(p => rowHTML(p, true)).join('') : '<div class="empty">Nenhum projeto. Arraste uma pauta para cá.</div>'}</div></div>`;
       }).join('');
-      return `<div class="panel" style="--fc:${f.cor};--fcs:${f.soft}"><div class="panel-head"><h2>${f.nome}</h2><span class="cnt num">${items.length} ativas</span></div>${groups}
+      const key = `frentes:${f.id}`;
+      return `<div class="panel${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${f.cor};--fcs:${f.soft}"><div class="panel-head" data-toggle-card><h2>${f.nome}</h2><span class="cnt num">${items.length} ativas</span>${TG}</div>${groups}
         <div class="add"><button class="btn" type="button" data-new="${f.id}">${I.plus}<span>Novo em ${f.curto}</span></button></div></div>`;
     }).join('')}</div>`;
   }
@@ -616,7 +639,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const items = by[n]; const late = items.filter(isLate).length; const risk = items.filter(p => p.saude !== 'ok').length;
       const meta = [`${items.length} ativa${items.length > 1 ? 's' : ''}`, late ? `${late} atrasada${late > 1 ? 's' : ''}` : '', risk ? `${risk} em atenção` : ''].filter(Boolean).join(', ');
       const groups = ['agora', 'proximo', 'depois'].map(h => { const g = items.filter(p => p.horizonte === h); if (!g.length) return ''; return `<div class="hgroup" data-h="${h}"><div class="hh"><h3>${HORIZ[h]}</h3><span class="num">${g.length}</span></div><div class="list">${g.map(p => rowHTML(p, true, true, true)).join('')}</div></div>`; }).join('');
-      return `<div class="panel gray" style="--fc:var(--f-fila);--fcs:var(--paper)"><div class="panel-head"><h2>${n ? esc(n) : 'Sem responsável'}</h2><span class="cnt num">${meta}</span></div>${groups}</div>`;
+      const key = `resp:${n || '_'}`;
+      return `<div class="panel gray${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:var(--f-fila);--fcs:var(--paper)"><div class="panel-head" data-toggle-card><h2>${n ? esc(n) : 'Sem responsável'}</h2><span class="cnt num">${meta}</span>${TG}</div>${groups}</div>`;
     }).join('')}</div>`;
   }
 
@@ -630,14 +654,14 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (late.length) html += `<section class="block">${head('Vencidos', 'Prazos que já passaram.', 'crit')}<div class="month"><div class="list">${late.map(p => rowHTML(p)).join('')}</div></div></section>`;
     if (withDue.length) html += `<section class="block">${head('Próximos prazos', 'Agrupados por mês.')}${Object.keys(months).map(k => `<div class="month"><h3>${k}</h3><div class="list">${months[k].map(p => rowHTML(p)).join('')}</div></div>`).join('')}</section>`;
     else html += `<div class="empty">Nenhum projeto com prazo definido. Abra um projeto e preencha o campo Prazo.</div>`;
-    if (noDue.length) html += `<section class="block">${head('Sem prazo definido', `${noDue.length} projetos ativos ainda sem data.`)}${groupByFrente(noDue, true)}</section>`;
+    if (noDue.length) html += `<section class="block">${head('Sem prazo definido', `${noDue.length} projetos ativos ainda sem data.`)}${groupByFrente(noDue, true, false, 'semprazo')}</section>`;
     return html;
   }
 
   function viewConcluidos() {
     const done = all().filter(p => p.etapa === 'concluido').sort((a, b) => (b.concluidoEm || '').localeCompare(a.concluidoEm || ''));
     if (!done.length) return `<div class="empty">Nenhum projeto concluído ainda.</div>`;
-    return `<section class="block">${head('Histórico', `${done.length} projetos concluídos.`)}${groupByFrente(done, true)}</section>`;
+    return `<section class="block">${head('Histórico', `${done.length} projetos concluídos.`)}${groupByFrente(done, true, false, 'hist')}</section>`;
   }
 
   // ---------- Gaveta de edição ----------
@@ -701,6 +725,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (drag.suppressClick) { drag.suppressClick = false; e.preventDefault(); return; }
     if (!e.target.closest('#novoWrap') && !$('#novoMenu').hidden) showMenu(false);
     if (e.target.closest('#qClear')) { state.q = ''; $('#q').value = ''; render(); $('#q').focus(); return; }
+    const tgc = e.target.closest('[data-toggle-card]'); if (tgc) { const card = tgc.closest('[data-key]'); const k = card.dataset.key; if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k); saveCollapsed(); render(); const again = document.querySelector(`[data-key="${CSS.escape(k)}"] .tg`); if (again && e.target.closest('.tg')) again.focus(); return; }
+    if (e.target.closest('#btnToggleAll')) { const cards = [...document.querySelectorAll('#content [data-key]')]; const allClosed = cards.every(el => collapsed.has(el.dataset.key)); cards.forEach(el => { if (allClosed) collapsed.delete(el.dataset.key); else collapsed.add(el.dataset.key); }); saveCollapsed(); render(); return; }
     const tab = e.target.closest('.tab'); if (tab) { selectTab(tab); return; }
     const open = e.target.closest('[data-open]'); if (open) { openDrawer(open.dataset.open); return; }
     const nw = e.target.closest('[data-new]'); if (nw) { showMenu(false); $('#btnNovo').focus(); novo(nw.dataset.new); return; }
