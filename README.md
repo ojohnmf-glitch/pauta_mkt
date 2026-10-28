@@ -68,6 +68,7 @@ Cada pauta é um documento em `projetos/<id>` com os campos:
 - **Prazos**: vencidos, por mês e sem prazo.
 - **Concluídos**: histórico.
 - **Copiar resumo**: coloca na área de transferência um resumo formatado (HTML e texto) para colar no Outlook.
+- Clique na faixa de um cartão para recolher ou expandir; "Recolher tudo" na linha de busca vale para a aba aberta.
 - Arraste pela alça de seis pontos para reordenar. Alt + seta para cima ou para baixo faz o mesmo pelo teclado.
 
 Além das pautas, a mesma coleção guarda dois documentos especiais: `projetos/_avisos` (`{ texto }`) e `projetos/_ferias` (`{ itens: [{ id, nome, inicio, fim }] }`), usados pelos blocos de avisos e férias da aba Semana.
