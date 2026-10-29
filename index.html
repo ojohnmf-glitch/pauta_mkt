@@ -23,7 +23,7 @@
 :root {
   color-scheme: light;
   --ink: #303336; --paper: #ffffff; --mist: #f2f5f7; --fog: #666e79; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
-  --blue: #1f6ad9; --blue-deep: #1a5fb8; --on-accent: #ffffff; --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1;
+  --blue: #1f6ad9; --blue-deep: #1a5fb8; --on-accent: #ffffff; --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00;
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #2A5CAA; --f-alpmi-soft: #f0f4f9;
   --f-alpme: #1D697C; --f-alpme-soft: #eff5f6;
@@ -93,6 +93,8 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 /* Busca e filtro */
 .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -8px 0 28px; }
 .search { position: relative; flex: 1 1 240px; max-width: 380px; display: block; }
+.search:not(.open) { display: none; }
+#btnSearch[hidden] { display: none; }
 .search input { width: 100%; border: 1px solid var(--field-edge); background: var(--paper); border-radius: var(--r-btn); padding: 0 36px; font-size: 14px; height: 40px; color: var(--ink); -webkit-appearance: none; appearance: none; }
 .search input::-webkit-search-cancel-button { display: none; }
 .search input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
@@ -137,6 +139,11 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .box:not(.open) .box-body { display: none; }
 .aviso-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .box .stamp { color: var(--fog); font-size: 11px; margin-top: 4px; }
+.box.avisos { background: var(--aviso-bg); }
+.box.avisos .box-head, .box.avisos .box-body { color: var(--aviso-ink); }
+.box.avisos .box-head .chev { color: var(--aviso-ink); opacity: .6; }
+.box.avisos .aviso-text { color: var(--ink); }
+.box.avisos .stamp { color: var(--aviso-ink); opacity: .8; }
 .box textarea, .box input { width: 100%; border: 1px solid var(--field-edge); border-radius: 6px; padding: 8px; font-size: 12px; background: var(--paper); color: var(--ink); line-height: 1.4; }
 .box textarea:focus, .box input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
 .box textarea { min-height: 96px; resize: vertical; }
@@ -357,7 +364,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 <main id="main">
   <div class="notice info" id="loading" role="status">Conectando ao painel… Os projetos da área aparecem aqui em instantes.</div>
   <div class="filters" id="filters" hidden>
-    <label class="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar pauta, marca ou responsável" aria-label="Buscar pauta" autocomplete="off"><button class="clear" id="qClear" type="button" aria-label="Limpar busca" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></label>
+    <button class="btn text" id="btnSearch" type="button" aria-expanded="false" aria-controls="q"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Buscar</span></button>
+    <label class="search" id="searchWrap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar pauta, marca ou responsável" aria-label="Buscar pauta" autocomplete="off"><button class="clear" id="qClear" type="button" aria-label="Limpar busca" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></label>
     <select id="respSel" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option></select>
     <span class="count" id="filterCount" role="status" aria-live="polite"></span>
     <button class="btn text" id="btnToggleAll" type="button" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg><span id="toggleAllLabel">Recolher tudo</span></button>
@@ -399,7 +407,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
   const cardAttrs = key => `data-key="${esc(key)}" class="${collapsed.has(key) ? ' collapsed' : ''}"`;
-  const state = { projects: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
+  const state = { projects: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, searchOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -516,6 +524,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     sel.innerHTML = '<option value="">Todos os responsáveis</option>' + names.map(n => `<option value="${esc(n)}" ${n === cur ? 'selected' : ''}>${esc(n)}</option>`).join('');
     if (cur && !names.includes(cur)) { state.resp = ''; }
     $('#qClear').hidden = !state.q;
+    const sOpen = state.ui.searchOpen || !!state.q; $('#searchWrap').classList.toggle('open', sOpen); $('#btnSearch').hidden = sOpen; $('#btnSearch').setAttribute('aria-expanded', sOpen);
     const total = allRaw().length, vis = all().length;
     $('#filterCount').textContent = filterActive() ? `${vis} de ${total} pautas` : '';
     $('#filters').hidden = !state.loaded || (!total && !filterActive());
@@ -725,7 +734,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   document.addEventListener('click', e => {
     if (drag.suppressClick) { drag.suppressClick = false; e.preventDefault(); return; }
     if (!e.target.closest('#novoWrap') && !$('#novoMenu').hidden) showMenu(false);
-    if (e.target.closest('#qClear')) { state.q = ''; $('#q').value = ''; render(); $('#q').focus(); return; }
+    if (e.target.closest('#btnSearch')) { state.ui.searchOpen = true; render(); $('#q').focus(); return; }
+    if (e.target.closest('#qClear')) { state.q = ''; $('#q').value = ''; state.ui.searchOpen = false; render(); $('#btnSearch').focus(); return; }
     const tgc = e.target.closest('[data-toggle-card]'); if (tgc) { const card = tgc.closest('[data-key]'); const k = card.dataset.key; if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k); saveCollapsed(); render(); const again = document.querySelector(`[data-key="${CSS.escape(k)}"] .tg`); if (again && e.target.closest('.tg')) again.focus(); return; }
     if (e.target.closest('#btnToggleAll')) { const cards = [...document.querySelectorAll('#content [data-key]')]; const allClosed = cards.every(el => collapsed.has(el.dataset.key)); cards.forEach(el => { if (allClosed) collapsed.delete(el.dataset.key); else collapsed.add(el.dataset.key); }); saveCollapsed(); render(); return; }
     const tab = e.target.closest('.tab'); if (tab) { selectTab(tab); return; }
@@ -775,7 +785,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   document.addEventListener('change', e => { if (e.target.id === 'respSel') { state.resp = e.target.value; render(); } });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !$('#novoMenu').hidden) { showMenu(false); $('#btnNovo').focus(); return; }
-    if (e.key === 'Escape' && e.target.id === 'q' && state.q) { state.q = ''; e.target.value = ''; render(); return; }
+    if (e.key === 'Escape' && e.target.id === 'q') { state.q = ''; e.target.value = ''; state.ui.searchOpen = false; render(); $('#btnSearch').focus(); return; }
     if (e.key === 'Escape' && state.selected) { closeDrawer(); return; }
     // Alt+seta: move a pauta na lista
     const rowEl = e.target.closest && e.target.closest('.row');
@@ -803,6 +813,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
+  document.addEventListener('focusout', e => { if (e.target && e.target.id === 'q' && !state.q) { state.ui.searchOpen = false; setTimeout(render, 0); } });
   document.addEventListener('focusout', e => { if (e.target && e.target.dataset && e.target.dataset.meta === 'avisos') setTimeout(() => { if (!document.activeElement || document.activeElement.dataset.meta !== 'avisos') render(); }, 0); });
 
   // ---------- Reordenar: arrastar pela alça (mouse e toque) ----------
