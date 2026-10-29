@@ -371,6 +371,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 (function () {
   'use strict';
   document.documentElement.lang = 'pt-BR';
+  window.addEventListener('error', e => { const l = document.getElementById('loading'); if (l) { l.hidden = false; l.className = 'notice'; l.textContent = 'Erro no painel: ' + (e.message || 'desconhecido') + '. Envie esta mensagem para corrigirmos.'; } });
 
   // ---------- Configuração da área ----------
   const FRENTES = [
@@ -996,8 +997,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const T = 'projetos';
     let listener = null, onErr = null, timer = null;
     const load = async () => {
-      const { data, error } = await client.from(T).select('id,data');
-      if (error) { if (onErr) onErr({ code: error.message || error.code || 'erro' }); return; }
+      let res; try { res = await client.from(T).select('id,data'); } catch (x) { res = { error: { message: String(x && x.message || x) } }; }
+      const { data, error } = res;
+      if (error) { if (onErr) onErr({ code: [error.code, error.message, error.hint].filter(Boolean).join(': ') }); return; }
       if (listener) listener({ docs: (data || []).map(r => ({ id: r.id, exists: true, data: () => r.data || {} })) });
     };
     const reload = () => { clearTimeout(timer); timer = setTimeout(load, 150); };
@@ -1023,9 +1025,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (!db && cfg.supabaseUrl && cfg.supabaseAnonKey) {
       // Site hospedado com Supabase configurado em config.js
       try {
-        if (!window.supabase) { try { await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'); } catch (x) { await loadScript('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js'); } }
+        if (!window.supabase) {
+          const srcs = ['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js', 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'];
+          let okLib = false; for (const src of srcs) { try { await loadScript(src); okLib = true; break; } catch (x) { /* tenta a próxima */ } }
+          if (!okLib || !window.supabase) throw new Error('biblioteca não carregou');
+        }
         state.db = supabaseDB({ url: cfg.supabaseUrl, anonKey: cfg.supabaseAnonKey }); state.canWrite = true; shared = true;
-      } catch (x) { loading.textContent = 'Não foi possível carregar a biblioteca do Supabase. Verifique a conexão e recarregue.'; loading.className = 'notice'; }
+      } catch (x) { state.loaded = true; loading.textContent = 'Não foi possível carregar a biblioteca do Supabase (' + String(x && x.message || x) + '). Verifique a conexão ou um bloqueador de scripts e recarregue.'; loading.className = 'notice'; render(); return; }
     }
     if (!state.db && !db) {
       // Sem banco compartilhado: modo local
@@ -1045,9 +1051,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       render();
     }, err => {
       state.loaded = true; const msg = String(err && err.code || 'erro');
-      loading.textContent = /projetos|42P01|does not exist|schema cache/i.test(msg)
-        ? 'Tabela “projetos” não encontrada no Supabase. Rode o arquivo supabase/schema.sql no SQL Editor do projeto e recarregue.'
-        : 'A conexão com o banco caiu (' + msg + '). Recarregue a página.';
+      const dica = /42P01|does not exist|schema cache|PGRST205/i.test(msg) ? 'A tabela “projetos” não existe no Supabase. Rode supabase/schema.sql no SQL Editor do projeto e recarregue.'
+        : /invalid api key|jwt|401|apikey/i.test(msg) ? 'O Supabase recusou a chave de config.js. Confira a chave publishable em Project Settings → API Keys.'
+        : /42501|row-level security|permission denied/i.test(msg) ? 'O Supabase bloqueou o acesso por falta de políticas. Rode supabase/schema.sql inteiro, inclusive as políticas.'
+        : /failed to fetch|networkerror|load failed/i.test(msg) ? 'Não foi possível alcançar o Supabase. Confira a URL em config.js e se o projeto está ativo.'
+        : 'Falha ao carregar as pautas.';
+      loading.innerHTML = esc(dica) + ' <span class="meta-line">Detalhe técnico: ' + esc(msg) + '</span>';
       loading.className = 'notice'; loading.hidden = false; render();
     });
   })();
