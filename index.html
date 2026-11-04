@@ -350,7 +350,7 @@ section.block[data-sec="parked"] .row.paused { opacity: 1; }
 .dot { width: 10px; height: 10px; border-radius: var(--r-icon); border: 0; padding: 0; background: var(--silver); flex: none; }
 .dot.ok { background: var(--ok); } .dot.atencao { background: var(--warn); } .dot.atrasado, .dot.critico { background: var(--crit); }
 .row .due { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.row .since { font-size: 12px; color: var(--fog); font-weight: 400; white-space: nowrap; }
+.row .since { font-size: 12px; color: var(--fog); font-weight: 400; max-width: 128px; text-align: right; line-height: 1.3; }
 .row .wait { font-size: 12px; font-weight: 600; color: var(--warn-text); background: var(--warn-soft); padding: 1px 8px; border-radius: 4px; white-space: nowrap; }
 .row .wait.crit { color: var(--crit-text); background: var(--danger-soft); }
 .saude-line { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); line-height: 1.4; }
@@ -628,8 +628,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (dA != null && dA > DIAS_PARADO) return { s: 'critico', why: `aguardando ${p.aguardando.trim()} há ${dA} dias` };
     if (dV != null && dV > DIAS_MARCO) return { s: 'critico', why: `${qual} vencido há ${dV} dias` };
     if (dV != null && dV > 0) return { s: 'atrasado', why: `${qual} vencido há ${dV} dia${dV > 1 ? 's' : ''}` };
-    if (!String(p.proximoPasso || '').trim()) return { s: 'atencao', why: 'sem próximo passo' };
-    if (dE > DIAS_PARADO) return { s: 'atencao', why: `${(ETAPAS[p.etapa] || p.etapa).toLowerCase()} há ${dE} dias` };
+    if (p.horizonte !== 'depois') { // backlog é ideia: não cobra próximo passo nem tempo parado
+      if (!String(p.proximoPasso || '').trim()) return { s: 'atencao', why: 'sem próximo passo' };
+      if (dE > DIAS_PARADO) return { s: 'atencao', why: `${(ETAPAS[p.etapa] || p.etapa).toLowerCase()} há ${dE} dias` };
+    }
     if (dV != null && dV >= -DIAS_MARCO) return { s: 'atencao', why: dV === 0 ? `${qual} vence hoje` : `${qual} vence em ${-dV} dia${dV < -1 ? 's' : ''}` };
     return { s: 'ok', why: '' };
   }
@@ -792,7 +794,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const marco = p.marco && p.etapa !== 'concluido' ? `<span class="marco">Marco ${fmtDate(p.marco)}</span>` : '';
     const dA = diasAguardando(p);
     const dE = diasNaEtapa(p);
-    const since = p.etapa !== 'concluido' ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
+    const since = p.etapa !== 'concluido' && !(compact && dE === 0) ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
     const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
     const due = `<span class="due ${dc}">${p.prazo && state.view === 'prazos' ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
@@ -899,16 +901,16 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <span class="${nEu ? 'warn' : ''}" title="Pautas em que ${EU} é quem está segurando o próximo passo"><b class="num">${nEu}</b>aguardando ${EU}</span>
       </div>
       ${wipHTML ? `<div class="kpi-strip" role="group" aria-label="Pautas em Agora por responsável, limite ${WIP_AGORA}">${wipHTML}</div>` : ''}
-      <section class="block" data-sec="agora">${head('Prioridades da semana', agora.length ? '' : 'O que está no horizonte “Agora”. Entra aqui a pauta com próximo passo, responsável e data do próximo marco.')}
-        ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte, ou arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="parked">${head('Estacionados', parked.length ? '' : 'Projetos pausados. Decidir na reunião: retomar, adiar ou encerrar.')}
-        ${parked.length ? groupByFrente(parked, false, false, 'parked') : '<div class="empty">Nenhum projeto estacionado. Arraste uma pauta para cá para pausá-la.</div>'}</section>
-      <section class="block" data-sec="fila">${head('Na fila', proximo.length ? '' : 'Projetos com horizonte “Próximo”. Entram nas prioridades quando algo do “Agora” for concluído.')}
-        ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia. Arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="backlog">${head('Backlog de ideias e projetos', depois.length ? '' : 'Projetos com horizonte “Depois” e ideias ainda embrionárias. Sem compromisso de data.')}
-        ${depois.length ? groupByFrente(depois, true, 'backlog', 'backlog') : '<div class="empty">Backlog vazio. Cadastre uma ideia e marque o horizonte como “Depois”, ou arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="done">${head('Concluídos na semana', done.length ? '' : 'Últimos 7 dias. Arraste uma pauta para cá para concluí-la.')}
-        ${done.length ? groupByFrente(done, true, false, 'done') : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
+      <section class="block" data-sec="agora">${head('Prioridades da semana')}
+        ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada em “Agora”. Entra aqui a pauta com próximo passo, responsável e data do próximo marco: abra um projeto e marque o horizonte, ou arraste uma pauta para cá.</div>'}</section>
+      <section class="block" data-sec="parked">${head('Estacionados')}
+        ${parked.length ? groupByFrente(parked, false, false, 'parked') : '<div class="empty">Nenhum projeto pausado. Arraste uma pauta para cá para pausá-la e decidir na reunião: retomar, adiar ou encerrar.</div>'}</section>
+      <section class="block" data-sec="fila">${head('Na fila')}
+        ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia. Projetos com horizonte “Próximo” ficam aqui até entrar nas prioridades.</div>'}</section>
+      <section class="block" data-sec="backlog">${head('Backlog de ideias e projetos')}
+        ${depois.length ? groupByFrente(depois, true, 'backlog', 'backlog') : '<div class="empty">Backlog vazio. Ideias e projetos com horizonte “Depois”, sem compromisso de data.</div>'}</section>
+      <section class="block" data-sec="done">${head('Concluídos na semana')}
+        ${done.length ? groupByFrente(done, true, false, 'done') : '<div class="empty">Nada concluído nos últimos 7 dias. Arraste uma pauta para cá para concluí-la.</div>'}</section>
       </div></div>`;
   }
 
