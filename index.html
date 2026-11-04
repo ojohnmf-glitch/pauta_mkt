@@ -1021,7 +1021,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
 
   // ---------- Gaveta de edição ----------
-  function openDrawer(id) { state.selected = id; state.ui.moreOpen = false; state.opener = document.activeElement; document.body.classList.add('has-drawer'); renderDrawer(state.projects[id], false); }
+  function openDrawer(id) { state.selected = id; state.ui.moreOpen = false; state.ui.agoraPendente = null; state.opener = document.activeElement; document.body.classList.add('has-drawer'); renderDrawer(state.projects[id], false); }
   const isBlank = p => p && !String(p.titulo || '').trim() && !String(p.proximoPasso || '').trim() && !String(p.notas || '').trim() && !(p.tags && p.tags.length);
   function closeDrawer() {
     const cur = state.selected && state.projects[state.selected];
@@ -1118,7 +1118,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const p = state.selected && state.projects[state.selected]; if (!p) return;
     if (state.canWrite === false) return;
     const sb = e.target.closest('.seg button'); if (sb) {
-      if (sb.parentElement.dataset.seg === 'horizonte' && sb.dataset.val === 'agora' && p.horizonte !== 'agora' && !podeEntrarAgora(p)) { const first = { 'próximo passo': '#f-next', 'responsável': '#f-resp', 'data do próximo marco': '#f-marco' }[agoraFaltas(p)[0]]; const el = first && $(first); if (el) el.focus(); return; }
+      if (sb.parentElement.dataset.seg === 'horizonte' && sb.dataset.val === 'agora' && p.horizonte !== 'agora' && !podeEntrarAgora(p)) { state.ui.agoraPendente = p.id; const first = { 'próximo passo': '#f-next', 'responsável': '#f-resp', 'data do próximo marco': '#f-marco' }[agoraFaltas(p)[0]]; const el = first && $(first); if (el) el.focus(); return; }
       p[sb.parentElement.dataset.seg] = sb.dataset.val; persist(p, true); if (sb.dataset.val === 'agora') avisarWip(p); renderDrawer(p, false); const again = document.querySelector(`[data-seg="${sb.parentElement.dataset.seg}"] [data-val="${sb.dataset.val}"]`); if (again) again.focus(); return; }
     const bc = e.target.closest('#btnConcluir'); if (bc) { if (bc.dataset.arm) { p.etapa = 'concluido'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = p.etapaDesde; persist(p, true); renderDrawer(p, false); } else { bc.dataset.arm = '1'; bc.querySelector('span').textContent = 'Confirmar: projeto terminou'; } return; }
     if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
@@ -1200,6 +1200,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       if (f === 'etapa') { if (p.etapa === 'concluido') p.concluidoEm = p.concluidoEm || new Date().toISOString(); else p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); $('#f-etapa').focus(); return; }
       if (e.target.tagName === 'TEXTAREA' && e.target.classList.contains('next')) { e.target.rows = Math.min(10, Math.max(3, e.target.value.split('\n').length + 1)); }
       if (f === 'proximoPasso' || f === 'marco' || f === 'prazo' || f === 'aguardando') { const sl = $('#saudeLine'); if (sl) sl.innerHTML = saudeLineHTML(p); }
+      // Tentou "Agora" antes de completar os campos: entra sozinha quando o último for preenchido
+      if (state.ui.agoraPendente === p.id && p.horizonte !== 'agora' && agoraCompleto(p)) { state.ui.agoraPendente = null; p.horizonte = 'agora'; document.querySelectorAll('[data-seg="horizonte"] button').forEach(b => b.setAttribute('aria-pressed', b.dataset.val === 'agora')); const r = $('#agoraRegra'); if (r) r.remove(); showToast('Campos completos: a pauta entrou em Agora.'); persist(p, true); avisarWip(p); return; }
       if (f === 'proximoPasso' || f === 'responsavel' || f === 'marco') { const r = $('#agoraRegra'); const fl = agoraFaltas(p); if (r) { if (!fl.length) r.remove(); else r.textContent = p.horizonte === 'agora' ? `Incompleto para Agora. Falta: ${fl.join(', ')}.` : 'Para entrar em Agora: próximo passo, responsável e data do próximo marco.'; } }
       persist(p, false); return;
     }
