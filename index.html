@@ -23,7 +23,7 @@
 :root {
   color-scheme: light;
   --ink: #303336; --paper: #ffffff; --mist: #f2f5f7; --fog: #666e79; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
-  --blue: #1f6ad9; --blue-deep: #1a5fb8; --on-accent: #ffffff; --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00;
+  --blue: #1f6ad9; --blue-deep: #1a5fb8; --on-accent: #ffffff; --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #c7d7ea; --f-alpmi-soft: #e8eff7; --f-alpmi-ink: #1f3a5a;
   --f-alpme: #c2d9cf; --f-alpme-soft: #e6f0ec; --f-alpme-ink: #1b3b33;
@@ -186,10 +186,10 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .kpi-strip b { font-weight: 600; color: var(--ink); margin-right: 3px; }
 .kpi-strip .warn b { color: var(--warn-text); } .kpi-strip .crit b { color: var(--crit-text); } .kpi-strip .ok b { color: var(--ok-text); }
 /* Scorecard na lateral: cartões empilhados e compactos */
-.sc-wrap { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 12px 12px; }
+.sc-wrap { background: var(--glass); border-radius: 12px; padding: 10px 12px 12px; }
 .side-title { font-size: 13px; font-weight: 600; color: var(--ink); padding: 0 2px 10px; line-height: 1.4; }
 .side .sc-grid { grid-template-columns: 1fr; gap: 8px; }
-.side .sc { padding: 0 12px 6px; border-radius: 8px; box-shadow: none; border: 1px solid var(--hairline); }
+.side .sc { padding: 0 12px 6px; border-radius: 8px; box-shadow: none; border: 1px solid var(--hairline); background: var(--glass); }
 .side .sc.collapsed { padding-bottom: 0; }
 .side .sc .frente-head { padding: 8px 12px; margin: 0 -12px 2px; font-size: 12px; }
 .side .sc-row { grid-template-columns: 1fr; gap: 4px 0; padding: 8px 0; }
