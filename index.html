@@ -31,7 +31,7 @@
   --f-inov: #d9d0e5; --f-inov-soft: #efebf4; --f-inov-ink: #372d4b;
   --f-fila: #dfe2e6; --f-fila-soft: #f0f2f4;
   --f-backlog: #cfdccf; --f-backlog-soft: #eef4ee;
-  --ok-soft: #e3f5e7;
+  --ok-soft: #e3f5e7; --warn-soft: #fff3d1;
   --fct: var(--ink); --fct2: var(--ash);
   --ok: #2fb344; --ok-text: #1f7a2e; --warn: #f5b800; --warn-text: #8a6400; --crit: #e5484d; --crit-text: #c8262c;
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, system-ui, sans-serif;
@@ -261,6 +261,15 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .pill.crit { background: var(--crit-text); border-color: var(--crit-text); color: var(--on-accent); }
 .pill.prog { background: var(--blue-tint); border-color: var(--blue); color: var(--blue); }
 .sc-stamp { font-size: 11px; color: var(--silver); padding: 8px 0 2px; }
+/* Linha inteira da meta colorida pelo atingimento: zerada em vermelho, 80 e 90% em âmbar, 100% ou mais e "Entregue" em verde */
+.sc-row.tone-ok, .sc-row.tone-warn, .sc-row.tone-crit { margin: 4px -12px; padding: 10px 12px; border-top: 0; border-radius: 8px; }
+.sc-row.tone-ok + .sc-row, .sc-row.tone-warn + .sc-row, .sc-row.tone-crit + .sc-row { border-top: 0; }
+.sc-row.tone-ok { background: var(--ok-soft); } .sc-row.tone-warn { background: var(--warn-soft); } .sc-row.tone-crit { background: var(--danger-soft); }
+.sc-row.tone-ok .sc-sel select, .sc-row.tone-warn .sc-sel select, .sc-row.tone-crit .sc-sel select { background: var(--paper); border-color: transparent; }
+.sc-sel.warn { color: var(--warn-text); }
+.sc-row.tone-ok .sc-lbl, .sc-row.tone-ok .sc-unit, .sc-row.tone-ok .sc-meta { color: var(--ok-text); }
+.sc-row.tone-crit .sc-lbl, .sc-row.tone-crit .sc-unit, .sc-row.tone-crit .sc-meta { color: var(--crit-text); }
+.sc-row.tone-warn .sc-lbl, .sc-row.tone-warn .sc-unit, .sc-row.tone-warn .sc-meta { color: var(--warn-text); }
 /* Bandeira vermelha: meta zerada ou marcada como "Abaixo" */
 .flag { width: 12px; height: 12px; fill: var(--crit); vertical-align: -1px; margin-right: 5px; flex: none; }
 .sc-row.alert .sc-name { color: var(--crit-text); }
@@ -742,7 +751,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const nivelTxt = m => { const n = metaNivel(m); const o = NIVEIS.find(x => x[0] === n); return o ? o[1] : null; };
   const hasTarget = m => m.tipo === 'numero' && Number(m.meta) > 0;
   function metaClass(m) {
-    if (m.tipo === 'numero') { const n = metaNivel(m); if (n == null) return ''; return n === 0 ? 'crit' : n >= 100 ? 'ok' : ''; }
+    if (m.tipo === 'numero') { const n = metaNivel(m); if (n == null) return ''; return n === 0 ? 'crit' : n >= 100 ? 'ok' : 'warn'; }
     if (m.tipo === 'entrega') return m.status === 'entregue' ? 'ok' : m.status === 'andamento' ? 'prog' : '';
     return m.status === 'ok' ? 'ok' : m.status === 'warn' ? 'warn' : m.status === 'crit' ? 'crit' : '';
   }
@@ -763,8 +772,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const st = RAG[m.status] ? m.status : 'sem';
       right = `<span class="sc-val"><input type="text" data-mtxt="${esc(m.id)}" value="${esc(m.atual || '')}" placeholder="ex.: 98% do orçado" aria-label="Comentário de ${esc(m.nome)}" ${ro}><button class="pill ${metaClass(m)}" type="button" data-mcycle="${esc(m.id)}" title="Clique para mudar a situação" ${ro}>${RAG[st]}</button></span>`;
     }
-    const alert = metaClass(m) === 'crit';
-    return `<div class="sc-row${alert ? ' alert' : ''}"><span><span class="sc-name">${alert ? FLAG : ''}${esc(m.nome)}</span><span class="sc-meta">${info}</span></span>${right}</div>`;
+    const cls = metaClass(m), alert = cls === 'crit';
+    const tone = cls === 'ok' || cls === 'warn' || cls === 'crit' ? ' tone-' + cls : '';
+    return `<div class="sc-row${alert ? ' alert' : ''}${tone}"><span><span class="sc-name">${alert ? FLAG : ''}${esc(m.nome)}</span><span class="sc-meta">${info}</span></span>${right}</div>`;
   }
   function scorecardHTML() {
     const list = metasAll();
