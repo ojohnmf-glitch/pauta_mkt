@@ -199,7 +199,8 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .side .sc-name { font-size: 13px; }
 .side .sc-meta { font-size: 11px; gap: 8px; }
 .side .sc-val { justify-content: flex-start; gap: 6px; }
-.side .sc-val input[type="number"] { width: 72px; font-size: 13px; min-height: 28px; }
+.side .sc-val input[type="number"] { width: 64px; font-size: 13px; min-height: 28px; }
+.side .sc-val { gap: 4px; }
 .side .sc-val input[type="text"] { width: 100%; font-size: 11px; min-height: 28px; }
 .side .pill { min-height: 28px; padding: 3px 10px; font-size: 11px; }
 .side .sc-stamp { padding: 6px 0 2px; }
@@ -219,6 +220,7 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .sc-val input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
 .sc-val input:disabled { background: var(--mist); color: var(--fog); }
 .sc-target { font-size: 12px; color: var(--fog); white-space: nowrap; }
+.sc-of { font-size: 12px; color: var(--fog); }
 .sc-pct { font-size: 12px; font-weight: 600; min-width: 38px; text-align: right; color: var(--fog); }
 .sc-pct.ok { color: var(--ok-text); } .sc-pct.warn { color: var(--warn-text); } .sc-pct.crit { color: var(--crit-text); }
 .sc-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--mist); overflow: hidden; }
@@ -455,9 +457,34 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const STALE_DAYS = 14;
   // Scorecard: grupos de metas (área, corporativas e uma por frente). Metas vivem na mesma coleção, ids "_m_…"
   const METAS_GRUPOS = [
-    { id: 'area', nome: 'Metas da área', cor: 'var(--ink)', soft: 'var(--paper)' },
-    { id: 'corp', nome: 'Corporativas (valem para todos)', cor: 'var(--f-fila)', soft: 'var(--f-fila-soft)', gray: true },
-  ].concat(FRENTES.map(f => ({ id: f.id, nome: f.nome, cor: f.cor, soft: f.soft })));
+    { id: 'empresa', nome: 'Metas da empresa', cor: 'var(--ink)', soft: 'var(--paper)' },
+    { id: 'john', nome: 'John', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
+    { id: 'luis', nome: 'Luis', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
+    { id: 'andre', nome: 'André', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
+    { id: 'valeretto', nome: 'Valeretto', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
+  ];
+  // Metas cadastradas na primeira abertura, só quando ainda não existe nenhuma no banco
+  const DEFAULT_METAS = [
+    ['empresa', 'Margem da carne (%)', 'Friboi', 'numero', '%'],
+    ['empresa', 'Margem da carne (R$)', 'Friboi', 'numero', 'R$'],
+    ['empresa', 'Volume de vendas ME e MI', 'ALP', 'numero', ''],
+    ['empresa', 'Volume PVA', 'MI', 'numero', ''],
+    ['empresa', 'Volume de vendas resfriado', 'ME', 'numero', ''],
+    ['john', 'Volume inovação', 'ALP + INN ME', 'numero', ''],
+    ['john', 'Expansão de PVAs no Sudeste Asiático', '', 'entrega', ''],
+    ['john', 'Plano de marketing Indonésia', '', 'entrega', ''],
+    ['john', 'Lançamento linha alta proteína MI', '', 'entrega', ''],
+    ['luis', 'Volume inovação', 'ALP ME + INN ME', 'numero', ''],
+    ['luis', 'Plataforma hambúrguer Chile', '', 'entrega', ''],
+    ['luis', 'Expansão de PVAs no Sudeste Asiático', '', 'entrega', ''],
+    ['andre', 'Volume inovação', 'ALP MI', 'numero', ''],
+    ['andre', 'Lançamento linha alta proteína MI', '', 'entrega', ''],
+    ['andre', 'Revitalização embalagens Bordon, Kitut, Target', '', 'entrega', ''],
+    ['andre', 'Bordon estratégia digital', '', 'entrega', ''],
+    ['valeretto', 'Volume inovação', 'ALP + INN', 'numero', ''],
+    ['valeretto', 'Taxa de conversão de novos projetos', '', 'numero', '%'],
+    ['valeretto', 'Plano expansão projeto SE, In Natura', '', 'entrega', ''],
+  ].map(([grupo, nome, escopo, tipo, unidade], i) => ({ id: '_m_' + String(i + 1).padStart(2, '0'), grupo, nome, escopo, tipo, unidade, meta: null, atual: null, status: tipo === 'entrega' ? 'nao_iniciado' : 'sem', ordem: i + 1 }));
   const ENTREGA = { nao_iniciado: 'Não iniciado', andamento: 'Em andamento', entregue: 'Entregue' };
   const RAG = { sem: 'Sem dado', ok: 'No alvo', warn: 'Atenção', crit: 'Abaixo' };
   const I = {
@@ -604,7 +631,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     renderFilters();
     const c = $('#content');
     const ae = document.activeElement;
-    if (ae && ae.dataset && (ae.dataset.meta || ae.dataset.mval != null || ae.dataset.mtxt != null) && c.contains(ae)) return; // digitando em avisos, férias ou scorecard: não redesenha
+    if (ae && ae.dataset && (ae.dataset.meta || ae.dataset.mval != null || ae.dataset.mmeta != null || ae.dataset.mtxt != null) && c.contains(ae)) return; // digitando em avisos, férias ou scorecard: não redesenha
     c.setAttribute('aria-labelledby', 'tab-' + state.view);
     if (!state.loaded) { c.innerHTML = ''; return; }
     if (state.view === 'semana') c.innerHTML = viewSemana();
@@ -649,20 +676,21 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const metasAll = () => Object.values(state.metas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   const fmtNum = n => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   const metaPct = m => { if (m.tipo !== 'numero' || !Number(m.meta)) return null; if (m.atual == null || m.atual === '') return null; return Math.max(0, Number(m.atual) / Number(m.meta) * 100); };
+  const hasTarget = m => m.tipo === 'numero' && Number(m.meta) > 0;
   function metaClass(m) {
     if (m.tipo === 'numero') { const p = metaPct(m); if (p == null) return ''; return p >= 95 ? 'ok' : p >= 75 ? 'warn' : 'crit'; }
     if (m.tipo === 'entrega') return m.status === 'entregue' ? 'ok' : m.status === 'andamento' ? 'prog' : '';
     return m.status === 'ok' ? 'ok' : m.status === 'warn' ? 'warn' : m.status === 'crit' ? 'crit' : '';
   }
-  const metaStatusTxt = m => m.tipo === 'numero' ? (metaPct(m) == null ? `sem valor, meta ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''}` : `${fmtNum(m.atual)} de ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''} (${Math.round(metaPct(m))}%)`) : m.tipo === 'entrega' ? (ENTREGA[m.status] || ENTREGA.nao_iniciado) : ((RAG[m.status] || RAG.sem) + (m.atual ? ', ' + m.atual : ''));
+  const metaStatusTxt = m => m.tipo === 'numero' ? (!hasTarget(m) ? 'meta a definir' : metaPct(m) == null ? `sem valor, meta ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''}` : `${fmtNum(m.atual)} de ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''} (${Math.round(metaPct(m))}%)`) : m.tipo === 'entrega' ? (ENTREGA[m.status] || ENTREGA.nao_iniciado) : ((RAG[m.status] || RAG.sem) + (m.atual ? ', ' + m.atual : ''));
   function metaRowHTML(m) {
     const ro = state.canWrite === false ? 'disabled' : '';
-    const info = [m.dono ? `<span>${esc(m.dono)}</span>` : '', m.peso ? `<span>peso ${esc(m.peso)}</span>` : '', m.obs ? `<span>${esc(m.obs)}</span>` : ''].join('');
+    const info = [m.escopo ? `<span>${esc(m.escopo)}</span>` : '', m.dono ? `<span>${esc(m.dono)}</span>` : '', m.peso ? `<span>peso ${esc(m.peso)}</span>` : '', m.obs ? `<span>${esc(m.obs)}</span>` : ''].join('');
     let right = '', bar = '';
     if (m.tipo === 'numero') {
       const p = metaPct(m), c = metaClass(m);
-      right = `<span class="sc-val"><input type="number" inputmode="decimal" step="any" data-mval="${esc(m.id)}" value="${m.atual == null ? '' : esc(m.atual)}" placeholder="atual" aria-label="Valor atual de ${esc(m.nome)}" ${ro}><span class="sc-target">de ${fmtNum(m.meta)}${m.unidade ? ' ' + esc(m.unidade) : ''}</span><span class="sc-pct ${c}">${p == null ? '—' : Math.round(p) + '%'}</span></span>`;
-      bar = `<span class="sc-bar ${c}" aria-hidden="true"><i style="width:${Math.min(100, p || 0)}%"></i></span>`;
+      right = `<span class="sc-val"><input type="number" inputmode="decimal" step="any" data-mval="${esc(m.id)}" value="${m.atual == null ? '' : esc(m.atual)}" placeholder="atual" aria-label="Valor atual de ${esc(m.nome)}" ${ro}><span class="sc-of">de</span><input type="number" inputmode="decimal" step="any" data-mmeta="${esc(m.id)}" value="${m.meta == null ? '' : esc(m.meta)}" placeholder="meta" aria-label="Meta de ${esc(m.nome)}" ${ro}>${m.unidade ? `<span class="sc-target">${esc(m.unidade)}</span>` : ''}<span class="sc-pct ${c}">${p == null ? '' : Math.round(p) + '%'}</span></span>`;
+      bar = hasTarget(m) ? `<span class="sc-bar ${c}" aria-hidden="true"><i style="width:${Math.min(100, p || 0)}%"></i></span>` : '';
     } else if (m.tipo === 'entrega') {
       const st = ENTREGA[m.status] ? m.status : 'nao_iniciado';
       right = `<span class="sc-val"><button class="pill ${metaClass(m)}" type="button" data-mcycle="${esc(m.id)}" title="Clique para mudar a situação" ${ro}>${ENTREGA[st]}</button></span>`;
@@ -678,8 +706,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     return `<div class="sc-grid">${METAS_GRUPOS.map(g => {
       const items = list.filter(m => m.grupo === g.id); if (!items.length) return '';
       const key = 'sc:' + g.id; const ok = items.filter(m => metaClass(m) === 'ok').length;
+      const pend = items.filter(m => (m.tipo === 'numero' && (!hasTarget(m) || m.atual == null)) || (m.tipo === 'entrega' && m.status === 'nao_iniciado') || (m.tipo === 'rag' && m.status === 'sem')).length;
       const last = items.map(m => m.atualizadoEm || '').sort().pop();
-      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok}/${items.length} no alvo</span>${TG}</div>
+      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}</span>${TG}</div>
         <div class="list sc-list">${items.map(metaRowHTML).join('')}</div>${last ? `<div class="sc-stamp">Atualizado ${new Date(last).toLocaleDateString('pt-BR')}</div>` : ''}</div>`;
     }).join('')}</div>`;
   }
@@ -890,9 +919,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const again = document.querySelector(`[data-mcycle="${CSS.escape(m.id)}"]`); if (again) again.focus();
   });
   document.addEventListener('change', e => {
-    if (e.target.dataset.mval == null || state.canWrite === false) return;
-    const m = state.metas[e.target.dataset.mval]; if (!m) return;
-    const v = e.target.value.trim(); m.atual = v === '' ? null : Number(v.replace(',', '.'));
+    if (state.canWrite === false) return;
+    const isVal = e.target.dataset.mval != null, isMeta = e.target.dataset.mmeta != null;
+    if (!isVal && !isMeta) return;
+    const m = state.metas[isVal ? e.target.dataset.mval : e.target.dataset.mmeta]; if (!m) return;
+    const v = e.target.value.trim(); const n = v === '' ? null : Number(v.replace(',', '.'));
+    if (isVal) m.atual = n; else m.meta = n;
     e.target.blur(); persistMetaDoc(m, true);
   });
   document.addEventListener('input', e => {
@@ -1213,6 +1245,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_avisos' && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
       state.projects = next; state.metas = nextM; state.loaded = true;
       if (shared && state.canWrite !== false) loading.hidden = true;
+      if (!Object.keys(nextM).length && state.canWrite !== false && !state.seeded) {
+        // Primeira abertura sem metas: cadastra o conjunto padrão da área
+        state.seeded = true;
+        DEFAULT_METAS.forEach(m => { state.metas[m.id] = Object.assign({}, m); const body = Object.assign({}, m); delete body.id; state.db.doc('projetos/' + m.id).set(body).catch(() => {}); });
+      }
+      try { if (!localStorage.getItem('pautas.scDefault')) { METAS_GRUPOS.forEach(g => collapsed.add('sc:' + g.id)); saveCollapsed(); localStorage.setItem('pautas.scDefault', '1'); } } catch (x) {}
       render();
     }, err => {
       state.loaded = true; const msg = String(err && err.code || 'erro');
