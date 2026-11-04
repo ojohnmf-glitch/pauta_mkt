@@ -62,7 +62,7 @@ Cada pauta é um documento em `projetos/<id>` com os campos:
 
 ## Uso
 
-- **Semana**: indicadores, avisos importantes e férias do time na lateral; prioridades do "Agora", pontos de atenção, fila e concluídos.
+- **Semana**: scorecard de metas, avisos importantes e férias na lateral; resumo das demandas, prioridades do "Agora", estacionados, fila, backlog de ideias e concluídos.
 - **Por frente**: um cartão por frente; arraste pautas entre Agora, Próximo e Depois.
 - **Responsáveis**: um cartão por pessoa, com as pautas ativas por horizonte e a sigla da frente.
 - **Prazos**: vencidos, por mês e sem prazo.
