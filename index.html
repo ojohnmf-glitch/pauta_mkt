@@ -375,7 +375,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .row.drag-ghost .grip { opacity: 1; }
 .row:hover .chev { color: var(--blue); }
 .chip { display: inline-block; font-size: 13px; line-height: 1.4; padding: 0 8px; border-radius: 4px; background: var(--mist); color: var(--ash); font-weight: 400; white-space: nowrap; }
-.chip.etapa { background: transparent; color: var(--fog); padding: 0; }
 .chip.incompleto { background: var(--warn-soft); color: var(--warn-text); font-weight: 600; }
 .row .marco { color: var(--fog); }
 .rule { font-size: 13px; color: var(--fog); line-height: 1.4; margin-top: 2px; }
@@ -430,7 +429,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .readonly .add, .readonly .danger, .readonly #btnConcluir, .readonly #btnReabrir { display: none; }
 .field textarea.next { min-height: 96px; line-height: 1.55; }
 .field .reveal { align-self: flex-start; }
-.field.collapsed textarea { display: none; }
+.field.collapsed textarea, .field.more.collapsed .more-body { display: none; }
+.more-body { display: flex; flex-direction: column; gap: 20px; }
 .field:not(.collapsed) .reveal { display: none; }
 
 @media (max-width: 760px) {
@@ -539,7 +539,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const SAUDE = { ok: 'No prazo', atencao: 'Atenção', atrasado: 'Atrasado', critico: 'Crítico' };
   const VIEWS = ['semana', 'frentes', 'responsaveis', 'prazos', 'concluidos', 'notas'];
   const NOTA_TIPOS = { reuniao: 'Reunião', pauta: 'Pauta enviada', outro: 'Nota' };
-  const STALE_DAYS = 14;
   const DIAS_PARADO = 7; // dias no mesmo status, ou aguardando alguém, antes de virar atenção / crítico
   const DIAS_MARCO = 3;  // dias de folga antes do marco (atenção) e de atraso depois dele (crítico)
   const EU = 'John';     // nome usado no contador "aguardando John" do resumo
@@ -591,7 +590,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
+  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -636,10 +635,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
   const saudeDe = p => saudeInfo(p).s;
   const isLate = p => { const d = diasVencido(p); return p.etapa !== 'concluido' && d != null && d > 0; };
-  const staleDays = p => p.atualizadoEm ? daysBetween(new Date(p.atualizadoEm), new Date()) : 0;
-  const isStale = p => p.etapa !== 'concluido' && staleDays(p) > STALE_DAYS;
-  // Estacionado: pausado ou sem nenhuma atualização há mais de STALE_DAYS dias
-  const isParked = p => p.etapa === 'pausado' || isStale(p);
+  // Estacionado: pausado de propósito. Pauta esquecida fica amarela pelo semáforo (DIAS_PARADO), não some das prioridades
+  const isParked = p => p.etapa === 'pausado';
   // Regra de entrada no "Agora": próximo passo, responsável e data do próximo marco. Sem os três, a pauta não entra.
   const agoraFaltas = p => [String(p.proximoPasso || '').trim() ? '' : 'próximo passo', String(p.responsavel || '').trim() ? '' : 'responsável', parseISO(p.marco) ? '' : 'data do próximo marco'].filter(Boolean);
   const agoraCompleto = p => !agoraFaltas(p).length;
@@ -791,19 +788,18 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const f = fr(p.frente);
     const goal = p.meta && state.metas[p.meta] ? `<span class="chip goal" title="Meta que este projeto move">${esc(state.metas[p.meta].nome)}</span>` : '';
     const chips = (showFrente ? `<span class="chip fr" style="--fc:${f.cor}"><span class="sw" aria-hidden="true"></span>${f.curto}</span>` : '') + p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('') + goal;
-    const etapa = p.etapa !== 'em_andamento' ? `<span class="chip etapa">${ETAPAS[p.etapa] || esc(p.etapa)}</span>` : '';
     const inc = p.horizonte === 'agora' && p.etapa !== 'concluido' && !agoraCompleto(p) ? `<span class="chip incompleto" title="Falta: ${esc(agoraFaltas(p).join(', '))}">Incompleto</span>` : '';
     const marco = p.marco && p.etapa !== 'concluido' ? `<span class="marco">Marco ${fmtDate(p.marco)}</span>` : '';
     const dA = diasAguardando(p);
     const dE = diasNaEtapa(p);
     const since = p.etapa !== 'concluido' ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
     const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
-    const due = `<span class="due ${dc}">${p.prazo ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
+    const due = `<span class="due ${dc}">${p.prazo && state.view === 'prazos' ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
     return `<button class="row${p.etapa === 'pausado' ? ' paused' : ''}" data-open="${esc(p.id)}" type="button">
       <span class="grip" data-grip title="Arrastar para reordenar" aria-hidden="true">${I.grip}</span>
       <span class="dot ${saude}" aria-hidden="true"></span>
-      <span class="main"><span class="title"><span class="sr-only">${SAUDE[saude]}${sd.why ? ', ' + esc(sd.why) : ''}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips} ${etapa}${inc}</span>${sub}</span>
+      <span class="main"><span class="title"><span class="sr-only">${SAUDE[saude]}${sd.why ? ', ' + esc(sd.why) : ''}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips}${inc}</span>${sub}</span>
       ${due}${ringHTML(p)}${I.chev}</button>`;
   }
   function groupByFrente(list, compact, gray, sec) {
@@ -858,10 +854,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     return `<div class="sc-grid">${METAS_GRUPOS.map(g => {
       const items = list.filter(m => m.grupo === g.id); if (!items.length) return '';
       const key = 'sc:' + g.id; const ok = items.filter(m => metaClass(m) === 'ok').length;
-      const pend = items.filter(m => (m.tipo === 'numero' && metaNivel(m) == null) || (m.tipo === 'entrega' && m.status === 'nao_iniciado') || (m.tipo === 'rag' && m.status === 'sem')).length;
       const last = items.map(m => m.atualizadoEm || '').sort().pop();
       const nAlert = items.filter(m => metaClass(m) === 'crit').length;
-      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}${g.gray ? '' : ';--fct:var(--on-accent);--fct2:var(--on-accent-2)'}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}${nAlert ? `<span class="alert-cnt">${FLAG}${nAlert}</span>` : ''}</span>${TG}</div>
+      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}${g.gray ? '' : ';--fct:var(--on-accent);--fct2:var(--on-accent-2)'}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${nAlert ? `<span class="alert-cnt">${FLAG}${nAlert}</span>` : ''}</span>${TG}</div>
         <div class="list sc-list">${items.map(metaRowHTML).join('')}</div>${last ? `<div class="sc-stamp">Atualizado ${new Date(last).toLocaleDateString('pt-BR')}</div>` : ''}</div>`;
     }).join('')}</div>`;
   }
@@ -881,11 +876,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const proximo = live.filter(p => p.horizonte === 'proximo');
     const depois = live.filter(p => p.horizonte === 'depois');
     const done = all().filter(doneRecently);
-    const nAnd = act.filter(p => p.etapa === 'em_andamento' || p.etapa === 'em_revisao').length;
     const nLate = act.filter(isLate).length;
     const nRisk = act.filter(p => saudeDe(p) !== 'ok').length;
     const nEu = act.filter(p => fold(p.aguardando).trim() === fold(EU)).length;
-    const nStale = parked.length;
     const pctAgora = agora.length ? Math.round(agora.filter(agoraCompleto).length / agora.length * 100) : null;
     const wip = {}; agora.forEach(p => { const r = String(p.responsavel || '').trim() || 'Sem dono'; wip[r] = (wip[r] || 0) + 1; });
     const wipHTML = Object.keys(wip).sort((a, b) => wip[b] - wip[a] || a.localeCompare(b, 'pt-BR')).map(r => `<span class="wip ${wip[r] > WIP_AGORA ? 'crit' : ''}" title="${esc(r)}: ${wip[r]} em Agora, limite ${WIP_AGORA}">${esc(r)}<b class="num">${wip[r]}/${WIP_AGORA}</b></span>`).join('');
@@ -900,24 +893,21 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       </aside>
       <div class="semana-main">
       <div class="kpi-strip" role="group" aria-label="Resumo das demandas">
-        <span><b class="num">${nAnd}</b>em andamento</span>
         <span class="${pctAgora == null ? '' : pctAgora < 100 ? 'warn' : 'ok'}" title="Pautas em Agora com próximo passo, responsável e data do próximo marco"><b class="num">${pctAgora == null ? '—' : pctAgora + '%'}</b>do Agora completo</span>
         <span class="${nRisk ? 'warn' : ''}"><b class="num">${nRisk}</b>atenção ou crítico</span>
         <span class="${nLate ? 'crit' : ''}"><b class="num">${nLate}</b>atrasados</span>
         <span class="${nEu ? 'warn' : ''}" title="Pautas em que ${EU} é quem está segurando o próximo passo"><b class="num">${nEu}</b>aguardando ${EU}</span>
-        <span class="${nStale ? 'warn' : ''}"><b class="num">${nStale}</b>estacionados</span>
-        <span class="${done.length ? 'ok' : ''}"><b class="num">${done.length}</b>concluídos na semana</span>
       </div>
       ${wipHTML ? `<div class="kpi-strip" role="group" aria-label="Pautas em Agora por responsável, limite ${WIP_AGORA}">${wipHTML}</div>` : ''}
-      <section class="block" data-sec="agora">${head('Prioridades da semana', 'O que está no horizonte “Agora”. Abra um projeto para atualizar o próximo passo, ou arraste pautas entre as seções.')}
+      <section class="block" data-sec="agora">${head('Prioridades da semana', agora.length ? '' : 'O que está no horizonte “Agora”. Entra aqui a pauta com próximo passo, responsável e data do próximo marco.')}
         ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte, ou arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="parked">${head('Estacionados', `Projetos pausados ou sem nenhuma atualização há mais de ${STALE_DAYS} dias. Decidir na reunião: retomar, adiar ou encerrar.`)}
+      <section class="block" data-sec="parked">${head('Estacionados', parked.length ? '' : 'Projetos pausados. Decidir na reunião: retomar, adiar ou encerrar.')}
         ${parked.length ? groupByFrente(parked, false, false, 'parked') : '<div class="empty">Nenhum projeto estacionado. Arraste uma pauta para cá para pausá-la.</div>'}</section>
-      <section class="block" data-sec="fila">${head('Na fila', 'Projetos com horizonte “Próximo”. Entram nas prioridades quando algo do “Agora” for concluído.')}
+      <section class="block" data-sec="fila">${head('Na fila', proximo.length ? '' : 'Projetos com horizonte “Próximo”. Entram nas prioridades quando algo do “Agora” for concluído.')}
         ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia. Arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="backlog">${head('Backlog de ideias e projetos', 'Projetos com horizonte “Depois” e ideias ainda embrionárias. Sem compromisso de data.')}
+      <section class="block" data-sec="backlog">${head('Backlog de ideias e projetos', depois.length ? '' : 'Projetos com horizonte “Depois” e ideias ainda embrionárias. Sem compromisso de data.')}
         ${depois.length ? groupByFrente(depois, true, 'backlog', 'backlog') : '<div class="empty">Backlog vazio. Cadastre uma ideia e marque o horizonte como “Depois”, ou arraste uma pauta para cá.</div>'}</section>
-      <section class="block" data-sec="done">${head('Concluídos na semana', 'Últimos 7 dias. Arraste uma pauta para cá para concluí-la.')}
+      <section class="block" data-sec="done">${head('Concluídos na semana', done.length ? '' : 'Últimos 7 dias. Arraste uma pauta para cá para concluí-la.')}
         ${done.length ? groupByFrente(done, true, false, 'done') : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
       </div></div>`;
   }
@@ -975,8 +965,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const months = {};
     withDue.filter(p => !isLate(p)).forEach(p => { const d = parseISO(p.prazo); const k = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); (months[k] = months[k] || []).push(p); });
     let html = '';
-    if (late.length) html += `<section class="block">${head('Vencidos', 'Prazos que já passaram.', 'crit')}<div class="month"><div class="list">${late.map(p => rowHTML(p)).join('')}</div></div></section>`;
-    if (withDue.length) html += `<section class="block">${head('Próximos prazos', 'Agrupados por mês.')}${Object.keys(months).map(k => `<div class="month"><h3>${k}</h3><div class="list">${months[k].map(p => rowHTML(p)).join('')}</div></div>`).join('')}</section>`;
+    if (late.length) html += `<section class="block">${head('Vencidos', '', 'crit')}<div class="month"><div class="list">${late.map(p => rowHTML(p)).join('')}</div></div></section>`;
+    if (withDue.length) html += `<section class="block">${head('Próximos prazos', '')}${Object.keys(months).map(k => `<div class="month"><h3>${k}</h3><div class="list">${months[k].map(p => rowHTML(p)).join('')}</div></div>`).join('')}</section>`;
     else html += `<div class="empty">Nenhum projeto com prazo definido. Abra um projeto e preencha o campo Prazo.</div>`;
     if (noDue.length) html += `<section class="block">${head('Sem prazo definido', `${noDue.length} projetos ativos ainda sem data.`)}${groupByFrente(noDue, true, false, 'semprazo')}</section>`;
     return html;
@@ -1029,7 +1019,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
 
   // ---------- Gaveta de edição ----------
-  function openDrawer(id) { state.selected = id; state.opener = document.activeElement; document.body.classList.add('has-drawer'); renderDrawer(state.projects[id], false); }
+  function openDrawer(id) { state.selected = id; state.ui.moreOpen = false; state.opener = document.activeElement; document.body.classList.add('has-drawer'); renderDrawer(state.projects[id], false); }
   const isBlank = p => p && !String(p.titulo || '').trim() && !String(p.proximoPasso || '').trim() && !String(p.notas || '').trim() && !(p.tags && p.tags.length);
   function closeDrawer() {
     const cur = state.selected && state.projects[state.selected];
@@ -1063,14 +1053,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
             <div class="field"><label for="f-prazo">Prazo final</label><input type="date" id="f-prazo" data-f="prazo" value="${esc(p.prazo)}"></div>
             <div class="field"><label for="f-aguard">Aguardando quem</label><input id="f-aguard" data-f="aguardando" value="${esc(p.aguardando)}" placeholder="John, agência, comercial, P&amp;D, cliente" list="aguardList"><datalist id="aguardList">${[...new Set(allRaw().map(x => String(x.aguardando || '').trim()).concat(allRaw().map(x => String(x.responsavel || '').trim())).filter(Boolean))].sort().map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
           </div>
-          <div class="grid2">
-            <div class="field"><label for="f-frente">Frente</label><select id="f-frente" data-f="frente">${FRENTES.map(x => `<option value="${x.id}" ${x.id === p.frente ? 'selected' : ''}>${x.nome}</option>`).join('')}</select></div>
-          </div>
-          <div class="grid2">
-            <div class="field"><label for="f-etapa">Etapa</label><select id="f-etapa" data-f="etapa">${Object.keys(ETAPAS).map(k => `<option value="${k}" ${k === p.etapa ? 'selected' : ''}>${ETAPAS[k]}</option>`).join('')}</select></div>
-          </div>
+          <div class="field"><label for="f-frente">Frente</label><select id="f-frente" data-f="frente">${FRENTES.map(x => `<option value="${x.id}" ${x.id === p.frente ? 'selected' : ''}>${x.nome}</option>`).join('')}</select></div>
+          <div class="field more ${state.ui.moreOpen || p.tags.length || p.meta ? '' : 'collapsed'}" id="moreField"><button class="btn reveal" type="button" id="moreToggle">${I.plus}<span>Mais detalhes: etapa, marcas e meta</span></button><div class="more-body">
+          <div class="field"><label for="f-etapa">Etapa</label><select id="f-etapa" data-f="etapa">${Object.keys(ETAPAS).map(k => `<option value="${k}" ${k === p.etapa ? 'selected' : ''}>${ETAPAS[k]}</option>`).join('')}</select></div>
           <div class="field"><label for="f-tags">Marcas e etiquetas</label><input id="f-tags" data-f="tags" value="${esc(p.tags.join(', '))}" placeholder="Bordon, Exeter (separadas por vírgula)"></div>
           <div class="field"><label for="f-meta">Meta que este projeto move</label><select id="f-meta" data-f="meta"><option value="">Nenhuma</option>${METAS_GRUPOS.map(g => { const ms = metasAll().filter(m => m.grupo === g.id); return ms.length ? `<optgroup label="${esc(g.nome)}">${ms.map(m => `<option value="${esc(m.id)}" ${m.id === p.meta ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>` : ''; }).join('')}</select></div>
+          </div></div>
           <div class="field ${p.notas ? '' : 'collapsed'}" id="notasField"><label for="f-notas">Comentários adicionais</label><button class="btn reveal" type="button" id="notasToggle">${I.plus}<span>Adicionar comentários</span></button><textarea id="f-notas" data-f="notas" placeholder="Contexto, decisões, riscos">${esc(p.notas)}</textarea></div>
           <div class="meta-line">Atualizado ${p.atualizadoEm ? new Date(p.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}${p.concluidoEm ? ', concluído ' + new Date(p.concluidoEm).toLocaleDateString('pt-BR') : ''}</div>
         </div>
@@ -1134,6 +1122,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
     const ex = e.target.closest('#btnExcluir'); if (ex) { if (ex.dataset.arm) { remove(p); } else { ex.dataset.arm = '1'; ex.querySelector('span').textContent = 'Confirmar exclusão'; } return; }
     if (e.target.closest('#notasToggle')) { $('#notasField').classList.remove('collapsed'); $('#f-notas').focus(); return; }
+    if (e.target.closest('#moreToggle')) { state.ui.moreOpen = true; $('#moreField').classList.remove('collapsed'); $('#f-etapa').focus(); return; }
   });
   // Scorecard
   document.addEventListener('click', e => {
@@ -1367,7 +1356,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const backlog = act.filter(p => p.horizonte === 'depois' && !isParked(p));
     return { frentes, atencao, done, fila, backlog };
   }
-  const statusTxt = p => { const sd = saudeInfo(p); const dA = diasAguardando(p); return [SAUDE[sd.s] + (sd.why && sd.s !== 'ok' ? ' (' + sd.why + ')' : ''), dA != null && !/^aguardando/.test(sd.why) ? `aguardando ${p.aguardando.trim()} há ${dA} dia${dA === 1 ? '' : 's'}` : '', p.etapa === 'pausado' ? 'pausado' : '', isStale(p) ? `sem atualização há ${staleDays(p)} dias` : ''].filter(Boolean).join(', '); };
+  const statusTxt = p => { const sd = saudeInfo(p); const dA = diasAguardando(p); return [SAUDE[sd.s] + (sd.why && sd.s !== 'ok' ? ' (' + sd.why + ')' : ''), dA != null && !/^aguardando/.test(sd.why) ? `aguardando ${p.aguardando.trim()} há ${dA} dia${dA === 1 ? '' : 's'}` : '', p.etapa === 'pausado' ? 'pausado' : ''].filter(Boolean).join(', '); };
   function resumoHTML() {
     const { frentes, atencao, done, fila, backlog } = resumoDados();
     const F = 'font-family:Calibri,Arial,sans-serif;';
