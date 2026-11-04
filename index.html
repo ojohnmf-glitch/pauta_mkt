@@ -335,7 +335,6 @@ section.block[data-sec="parked"] .row.paused { opacity: 1; }
 .row .sub { font-size: 15px; color: var(--fog); line-height: 1.5; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .row .sub .none { color: var(--fog); font-style: italic; }
 .row .sub .who { color: var(--ash); }
-.row .sub .stale { color: var(--warn-text); }
 /* Próximo passo com tópicos e checklist */
 .steps { display: block; font-size: 15px; color: var(--fog); line-height: 1.5; margin-top: 2px; }
 .step { display: flex; align-items: flex-start; gap: 8px; }
@@ -666,9 +665,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const filterActive = () => !!(state.q.trim() || state.resp);
   function matches(p) {
     if (state.resp && fold(p.responsavel).trim() !== fold(state.resp).trim()) return false;
-    if (state.q.trim() && fold(p.aguardando).includes(fold(state.q).trim())) return true;
     const q = fold(state.q).trim(); if (!q) return true;
-    return [p.titulo, p.responsavel, p.proximoPasso, p.notas, fr(p.frente).nome, fr(p.frente).curto].concat(p.tags || []).some(v => fold(v).includes(q));
+    return [p.titulo, p.responsavel, p.aguardando, p.proximoPasso, p.notas, fr(p.frente).nome, fr(p.frente).curto].concat(p.tags || []).some(v => fold(v).includes(q));
   }
   const all = () => allRaw().filter(matches);
   const active = () => all().filter(p => p.etapa !== 'concluido');
@@ -801,8 +799,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const since = p.etapa !== 'concluido' ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
     const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
     const due = `<span class="due ${dc}">${p.prazo ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
-    const stale = isStale(p) ? `<span class="stale">Sem atualização há ${staleDays(p)} dias</span>` : '';
-    const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${stale}</span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}${stale}</span>${stepsHTML(p.proximoPasso)}`;
+    const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
     return `<button class="row${p.etapa === 'pausado' ? ' paused' : ''}" data-open="${esc(p.id)}" type="button">
       <span class="grip" data-grip title="Arrastar para reordenar" aria-hidden="true">${I.grip}</span>
       <span class="dot ${saude}" aria-hidden="true"></span>
@@ -1055,7 +1052,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <div class="drawer-body">
           <h2 class="sr-only" id="drawerTitle">${p.titulo ? 'Editar ' + esc(p.titulo) : 'Novo projeto'}</h2>
           <div class="field"><input class="big" id="f-titulo" data-f="titulo" value="${esc(p.titulo)}" placeholder="Nome do projeto" aria-label="Nome do projeto"></div>
-          <div class="field"><label id="lbl-horizonte">Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, false, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
+          <div class="field"><label>Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, false, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
           <div class="field"><label id="lbl-saude">Saúde (calculada)</label><div class="saude-line" id="saudeLine" aria-labelledby="lbl-saude">${saudeLineHTML(p)}</div></div>
           <div class="field"><label for="f-next">Próximo passo</label><textarea id="f-next" class="next" data-f="proximoPasso" rows="${Math.min(10, Math.max(3, String(p.proximoPasso || '').split('\n').length + 1))}" placeholder="Comece com verbo no infinitivo: Aprovar KV, Enviar brief. Use - para tópicos e [ ] para checklist.">${esc(p.proximoPasso)}</textarea></div>
           <div class="grid2">
