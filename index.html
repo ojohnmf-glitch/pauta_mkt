@@ -217,7 +217,7 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .readonly .box .mini, .readonly .ferias-item .rm, .readonly .ferias-item .ph { display: none; }
 @media (max-width: 900px) {
   .semana { grid-template-columns: 1fr; gap: 24px; }
-  .side { position: static; }
+  .side { position: static; order: 2; } /* celular e tablet: prioridades primeiro, metas e avisos no fim */
 }
 
 /* Resumo das demandas: uma linha discreta acima das prioridades */
@@ -429,7 +429,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .actions { width: 100%; flex-wrap: wrap; }
   .actions .btn, .actions .menu-wrap { flex: 1 1 140px; min-width: 0; }
   .menu-wrap .btn { width: 100%; }
-  .menu { left: 0; right: 0; }
+  .menu { left: auto; right: 0; min-width: 0; width: max-content; max-width: calc(100vw - 32px); }
+  .filters .menu { left: 0; right: auto; }
   .filters .count { flex-basis: 100%; margin-left: 0; }
   main { padding-top: 24px; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   /* Abas viram barra inferior */
@@ -450,6 +451,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; max-height: 92dvh; border-radius: var(--r-card) var(--r-card) 0 0; margin-top: 0; }
   .drawer::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 9999px; background: var(--hairline); margin: 12px auto 0; }
   .drawer-foot .savestate { flex-basis: 100%; margin-right: 0; }
+  .ferias-item .rm, .ferias-item .ph { width: 28px; height: 28px; }
   .drawer-foot .btn { flex: 1 1 auto; }
   .field input.big { font-size: 20px; }
 }
