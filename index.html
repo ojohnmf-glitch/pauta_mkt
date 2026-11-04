@@ -321,6 +321,9 @@ section.block { margin-bottom: var(--section); }
 
 /* Linhas de pauta */
 .list { display: flex; flex-direction: column; }
+/* Pausada fora de "Estacionados": esmaecida, para não parecer prioridade */
+.row.paused { opacity: .55; } .row.paused:hover, .row.paused:focus-visible { opacity: .9; }
+section.block[data-sec="parked"] .row.paused { opacity: 1; }
 .row { display: grid; grid-template-columns: 12px 10px minmax(0, 1fr) auto 24px 14px; gap: 12px; align-items: center; width: 100%; padding: 12px 0; border: 0; border-top: 1px solid var(--rowline, var(--hairline)); background: transparent; cursor: pointer; text-align: left; color: var(--ink); transition: background .12s; }
 .frente-group, .panel { --rowline: var(--tint-line); }
 .frente-group .chip, .panel .chip { background: var(--glass-70); color: var(--ash); }
@@ -743,7 +746,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const due = p.prazo ? `<span class="due ${dc}"><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : '<span class="due"></span>';
     const stale = isStale(p) ? `<span class="stale">Sem atualização há ${staleDays(p)} dias</span>` : '';
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${stale}</span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}${stale}</span>${stepsHTML(p.proximoPasso)}`;
-    return `<button class="row" data-open="${esc(p.id)}" type="button">
+    return `<button class="row${p.etapa === 'pausado' ? ' paused' : ''}" data-open="${esc(p.id)}" type="button">
       <span class="grip" data-grip title="Arrastar para reordenar" aria-hidden="true">${I.grip}</span>
       <span class="dot ${p.saude}" aria-hidden="true"></span>
       <span class="main"><span class="title"><span class="sr-only">${SAUDE[p.saude]}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips} ${etapa}</span>${sub}</span>
@@ -1274,6 +1277,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (state.canWrite === false) return;
     const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const p = norm(id, blank(frente || 'alpmi'));
+    if (state.view === 'semana') p.horizonte = 'agora'; // criada pela aba Semana: já entra nas prioridades
     persist(p, true); openDrawer(id);
   }
 
