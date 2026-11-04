@@ -86,7 +86,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 .btn.text:hover { background: var(--mist); border-color: transparent; }
 .btn.done { background: var(--ok-soft); border-color: transparent; color: var(--ok-text); }
 .btn.done:hover { background: var(--ok-soft); border-color: var(--ok); }
-.btn.done[data-arm] { background: var(--ok); border-color: var(--ok); color: var(--on-accent); }
+.btn.done[data-arm] { background: var(--ok-text); border-color: var(--ok-text); color: var(--on-accent); }
 .btn:disabled, .btn:disabled:hover { background: var(--mist); color: var(--fog); border-color: var(--hairline); cursor: not-allowed; transform: none; }
 /* Abas: segmentado com ícone e rótulo; fixo no topo no desktop, barra inferior no celular */
 .tabbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--mist); }
@@ -128,11 +128,10 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .notice { background: var(--paper); color: var(--smoke); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 16px var(--card-pad); margin-bottom: 40px; font-size: 15px; }
 .notice.info { color: var(--fog); }
 
-/* Semana: indicadores compactos numa coluna fixa à esquerda, conteúdo à direita */
+/* Semana: metas, avisos e férias numa coluna fixa à esquerda, conteúdo à direita */
 .semana { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 24px; align-items: start; }
 .side { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100dvh - 100px); overflow-y: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
 .side::-webkit-scrollbar { display: none; }
-.kpis { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 2px 0; }
 /* Avisos e férias */
 .box { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 8px 12px; font-size: 12px; }
 .box-head { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 4px 0; min-height: 32px; font-size: 12px; font-weight: 600; color: var(--ink); text-align: left; line-height: 1.3; white-space: nowrap; min-width: 0; }
@@ -170,19 +169,9 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .ferias-form { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .ferias-form label { font-size: 11px; color: var(--fog); display: block; margin-bottom: 2px; }
 .readonly .box .mini, .readonly .ferias-item .rm { display: none; }
-.kpi { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 8px 12px; }
-.kpi + .kpi { border-top: 1px solid var(--hairline); }
-.kpi .label { font-size: 12px; color: var(--fog); line-height: 1.3; }
-.kpi .value { font-size: 16px; font-weight: 700; line-height: 1.2; color: var(--ink); flex: none; }
-.kpi.warn .value { color: var(--warn-text); } .kpi.crit .value { color: var(--crit-text); } .kpi.ok .value { color: var(--ok-text); }
 @media (max-width: 900px) {
   .semana { grid-template-columns: 1fr; gap: 24px; }
   .side { position: static; max-height: none; overflow: visible; }
-  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); padding: 0; overflow: hidden; }
-  .kpi { flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 16px; }
-  .kpi + .kpi { border-top: 0; }
-  .kpi:nth-child(n+4) { border-top: 1px solid var(--hairline); }
-  .kpi:not(:nth-child(3n+1)) { border-left: 1px solid var(--hairline); }
 }
 
 /* Resumo das demandas: uma linha discreta acima das prioridades */
@@ -229,9 +218,9 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .pill { border: 1px solid var(--hairline); background: var(--paper); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; color: var(--ash); white-space: nowrap; line-height: 1.3; min-height: 30px; }
 .pill:hover { border-color: var(--silver); }
 .pill:disabled { cursor: default; }
-.pill.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
-.pill.warn { background: var(--warn); border-color: var(--warn); color: #1d1d1f; }
-.pill.crit { background: var(--crit); border-color: var(--crit); color: #fff; }
+.pill.ok { background: var(--ok-text); border-color: var(--ok-text); color: var(--on-accent); }
+.pill.warn { background: var(--warn); border-color: var(--warn); color: var(--ink); }
+.pill.crit { background: var(--crit-text); border-color: var(--crit-text); color: var(--on-accent); }
 .pill.prog { background: var(--blue-tint); border-color: var(--blue); color: var(--blue); }
 .sc-stamp { font-size: 11px; color: var(--silver); padding: 8px 0 2px; }
 .chip.goal { background: var(--blue-tint); color: var(--blue); }
@@ -252,6 +241,7 @@ section.block { margin-bottom: var(--section); }
 .tg { display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -8px -4px 4px; border: 0; background: transparent; color: var(--fct2); border-radius: 6px; flex: none; }
 .tg svg { width: 14px; height: 14px; transition: transform .15s; }
 .tg:hover { color: var(--fct); }
+.tg:focus-visible { outline-color: var(--fct); }
 .collapsed .tg svg { transform: rotate(-90deg); }
 .frente-group.collapsed { padding-bottom: 0; }
 .frente-group.collapsed .frente-head, .panel.collapsed .panel-head { margin-bottom: 0; }
@@ -500,7 +490,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const cardAttrs = key => `data-key="${esc(key)}" class="${collapsed.has(key) ? ' collapsed' : ''}"`;
   const state = { projects: {}, metas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, searchOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1106,7 +1095,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     h += `<p style="${F}font-size:10pt;color:${C.meta};margin:0 0 12px">Painel Semanal de Pautas</p>`;
     const aviso = String(state.meta._avisos.texto || '').trim();
     if (aviso) h += h2('Avisos importantes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
-    METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; h += h2(g.nome) + '<ul style="margin:0 0 0 18px;padding:0">'; ms.forEach(m => { h += li(`<b>${esc(m.nome)}</b> <span style="color:${C.meta}">, ${esc(metaStatusTxt(m))}${m.dono ? ', ' + esc(m.dono) : ''}</span>`); }); h += '</ul>'; });
+    METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; h += h2(g.nome) + '<ul style="margin:0 0 0 18px;padding:0">'; ms.forEach(m => { h += li(`<b>${esc(m.nome)}</b><span style="color:${C.meta}">${m.escopo ? ' (' + esc(m.escopo) + ')' : ''}, ${esc(metaStatusTxt(m))}${m.dono ? ', ' + esc(m.dono) : ''}</span>`); }); h += '</ul>'; });
     frentes.forEach(({ f, items }) => {
       h += h2(f.nome) + '<ul style="margin:0 0 0 18px;padding:0">';
       items.forEach(p => {
@@ -1128,7 +1117,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const L = [`WEEKLY REVIEW, ${weekLabel()}`, ''];
     const aviso = String(state.meta._avisos.texto || '').trim();
     if (aviso) { L.push('AVISOS IMPORTANTES'); L.push(aviso); L.push(''); }
-    METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; L.push(g.nome.toUpperCase()); ms.forEach(m => L.push(`• ${m.nome}, ${metaStatusTxt(m)}${m.dono ? ', ' + m.dono : ''}`)); L.push(''); });
+    METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; L.push(g.nome.toUpperCase()); ms.forEach(m => L.push(`• ${m.nome}${m.escopo ? ' (' + m.escopo + ')' : ''}, ${metaStatusTxt(m)}${m.dono ? ', ' + m.dono : ''}`)); L.push(''); });
     frentes.forEach(({ f, items }) => {
       L.push(f.nome.toUpperCase());
       items.forEach(p => {
