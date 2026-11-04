@@ -22,7 +22,7 @@
 /* Things — gallery-quiet: canvas Mist, cartões Paper com raio 18px e sombra dupla, texto Ink/Fog, um único azul (Signal) para cada momento interativo. Nav flutua sem fundo; seções separadas por espaço, não por linhas. */
 :root {
   color-scheme: light;
-  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f2f5f7; --canopy: #e3e7ec; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
+  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f2f5f7; --canopy: #dde2e8; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
   --blue: #1f6ad9; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #c7d7ea; --f-alpmi-soft: #e8eff7; --f-alpmi-ink: #1f3a5a;
@@ -43,7 +43,7 @@
 }
 
 * { box-sizing: border-box; }
-body { background: var(--mist) linear-gradient(180deg, var(--canopy) 0, var(--mist) 260px) no-repeat; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; accent-color: var(--blue); caret-color: var(--blue); }
+body { background: var(--mist) linear-gradient(180deg, var(--canopy) 0, var(--canopy) 120px, var(--mist) 360px) no-repeat; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; accent-color: var(--blue); caret-color: var(--blue); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--mist); }
 body.has-drawer { overflow-y: hidden; }
 ::selection { background: var(--selection); }
@@ -89,7 +89,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 .btn:disabled, .btn:disabled:hover { background: var(--mist); color: var(--fog); border-color: var(--hairline); cursor: not-allowed; transform: none; }
 /* Abas: segmentado com ícone e rótulo; fixo no topo no desktop, barra inferior no celular */
 .tabbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: transparent; transition: background .15s, box-shadow .15s; }
-.tabbar.stuck { background: var(--mist); box-shadow: 0 1px 0 var(--hairline); }
+.tabbar.stuck { background: var(--canopy); box-shadow: 0 1px 0 var(--hairline); }
 .tabbar-inner { max-width: var(--page); margin: 0 auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
 .tabs { display: inline-flex; gap: 24px; }
 .tab { display: inline-flex; align-items: baseline; gap: 4px; border: 0; background: transparent; padding: 6px 0; font-size: 16px; font-weight: 600; color: var(--fog); line-height: 1.3; white-space: nowrap; border-radius: 4px; transition: color .12s, transform .08s; }
