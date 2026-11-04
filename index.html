@@ -22,7 +22,7 @@
 /* Things — gallery-quiet: canvas Mist, cartões Paper com raio 18px e sombra dupla, texto Ink/Fog, um único azul (Signal) para cada momento interativo. Nav flutua sem fundo; seções separadas por espaço, não por linhas. */
 :root {
   color-scheme: light;
-  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f2f5f7; --canopy: #dde2e8; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
+  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f7f9fb; --canopy: #dde2e8; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dfe3e8; --field-edge: #7d8591;
   --blue: #1f6ad9; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #eef4fd; --selection: rgba(31,106,217,.18); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fbfcfd; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #c7d7ea; --f-alpmi-soft: #e8eff7; --f-alpmi-ink: #1f3a5a;
@@ -349,7 +349,15 @@ section.block[data-sec="parked"] .row.paused { opacity: 1; }
 .row .due.late { color: var(--crit-text); font-weight: 600; }
 .row .due.soon { color: var(--warn-text); font-weight: 600; }
 .dot { width: 10px; height: 10px; border-radius: var(--r-icon); border: 0; padding: 0; background: var(--silver); flex: none; }
-.dot.ok { background: var(--ok); } .dot.atencao { background: var(--warn); } .dot.critico { background: var(--crit); }
+.dot.ok { background: var(--ok); } .dot.atencao { background: var(--warn); } .dot.atrasado, .dot.critico { background: var(--crit); }
+.row .due { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.row .since { font-size: 12px; color: var(--fog); font-weight: 400; white-space: nowrap; }
+.row .wait { font-size: 12px; font-weight: 600; color: var(--warn-text); background: var(--warn-soft); padding: 1px 8px; border-radius: 4px; white-space: nowrap; }
+.row .wait.crit { color: var(--crit-text); background: var(--danger-soft); }
+.saude-line { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); line-height: 1.4; }
+.saude-line .why { color: var(--fog); }
+.saude-line .how { font-size: 13px; color: var(--fog); flex-basis: 100%; }
+.saude-line { flex-wrap: wrap; }
 .ring { width: 24px; height: 24px; flex: none; }
 .ring .track { fill: none; stroke: var(--hairline); stroke-width: 1.6; }
 .ring .fill { fill: none; stroke: var(--blue); stroke-width: 2.2; stroke-linecap: round; }
@@ -417,9 +425,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .seg button:hover { color: var(--ink); border-color: var(--silver); }
 .seg button:disabled { cursor: default; }
 .seg button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); font-weight: 600; }
-.seg button.ok[aria-pressed="true"] { border-color: var(--ok); color: var(--ok-text); }
-.seg button.atencao[aria-pressed="true"] { border-color: var(--warn); color: var(--warn-text); }
-.seg button.critico[aria-pressed="true"] { border-color: var(--crit); color: var(--crit-text); }
 .drawer-foot { margin-top: auto; padding: 16px var(--card-pad) calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hairline); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--fog); }
 .savestate { margin-right: auto; line-height: 1.4; }
 .meta-line { color: var(--fog); font-size: 13px; line-height: 1.4; }
@@ -453,7 +458,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .tab .ic { width: 22px; height: 22px; }
   .tab[aria-selected="true"] { background: transparent; }
   .row { grid-template-columns: 12px 10px minmax(0, 1fr) 24px 14px; }
-  .row .due { grid-column: 3; text-align: left; }
+  .row .due { grid-column: 3; text-align: left; align-items: flex-start; }
   .frentes-grid { grid-template-columns: 1fr; }
   .drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; max-height: 92dvh; border-radius: var(--r-card) var(--r-card) 0 0; margin-top: 0; }
   .drawer::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 9999px; background: var(--hairline); margin: 12px auto 0; }
@@ -532,10 +537,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   ];
   const ETAPAS = { nao_iniciado: 'Não iniciado', em_andamento: 'Em andamento', em_revisao: 'Em revisão', pausado: 'Pausado', concluido: 'Concluído' };
   const HORIZ = { agora: 'Agora', proximo: 'Próximo', depois: 'Depois' };
-  const SAUDE = { ok: 'No prazo', atencao: 'Atenção', critico: 'Crítico' };
+  const SAUDE = { ok: 'No prazo', atencao: 'Atenção', atrasado: 'Atrasado', critico: 'Crítico' };
   const VIEWS = ['semana', 'frentes', 'responsaveis', 'prazos', 'concluidos', 'notas'];
   const NOTA_TIPOS = { reuniao: 'Reunião', pauta: 'Pauta enviada', outro: 'Nota' };
   const STALE_DAYS = 14;
+  const DIAS_PARADO = 7; // dias no mesmo status, ou aguardando alguém, antes de virar atenção / crítico
+  const DIAS_MARCO = 3;  // dias de folga antes do marco (atenção) e de atraso depois dele (crítico)
+  const EU = 'John';     // nome usado no contador "aguardando John" do resumo
   const WIP_AGORA = 4; // máximo de pautas em "Agora" por responsável: limite visível no resumo, fica vermelho quando estoura
   // Scorecard: grupos de metas (área, corporativas e uma por frente). Metas vivem na mesma coleção, ids "_m_…"
   const METAS_GRUPOS = [
@@ -608,7 +616,27 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     return `Semana ${isoWeek(t)}, ${fmtDay(mon)} a ${fmtDay(fri)} de ${t.getFullYear()}`;
   }
   const dueClass = p => { if (!p.prazo || p.etapa === 'concluido') return ''; const n = daysBetween(today(), parseISO(p.prazo)); return n < 0 ? 'late' : n <= 7 ? 'soon' : ''; };
-  const isLate = p => dueClass(p) === 'late';
+  // Semáforo calculado a partir dos dados, de cima para baixo; vale a primeira regra que bater
+  const daysSince = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? Math.max(0, daysBetween(d, new Date())) : 0; };
+  const etapaDesde = p => p.etapaDesde || p.atualizadoEm || '';
+  const diasNaEtapa = p => daysSince(etapaDesde(p));
+  const diasAguardando = p => String(p.aguardando || '').trim() ? daysSince(p.aguardandoDesde || p.atualizadoEm) : null;
+  const vencimento = p => parseISO(p.marco) || parseISO(p.prazo); // próximo marco; sem marco, o prazo final
+  const diasVencido = p => { const d = vencimento(p); return d ? daysBetween(d, today()) : null; }; // positivo = vencido há N dias
+  function saudeInfo(p) {
+    if (p.etapa === 'concluido') return { s: 'ok', why: 'concluído' };
+    const dA = diasAguardando(p), dV = diasVencido(p), dE = diasNaEtapa(p);
+    const qual = parseISO(p.marco) ? 'marco' : 'prazo';
+    if (dA != null && dA > DIAS_PARADO) return { s: 'critico', why: `aguardando ${p.aguardando.trim()} há ${dA} dias` };
+    if (dV != null && dV > DIAS_MARCO) return { s: 'critico', why: `${qual} vencido há ${dV} dias` };
+    if (dV != null && dV > 0) return { s: 'atrasado', why: `${qual} vencido há ${dV} dia${dV > 1 ? 's' : ''}` };
+    if (!String(p.proximoPasso || '').trim()) return { s: 'atencao', why: 'sem próximo passo' };
+    if (dE > DIAS_PARADO) return { s: 'atencao', why: `${(ETAPAS[p.etapa] || p.etapa).toLowerCase()} há ${dE} dias` };
+    if (dV != null && dV >= -DIAS_MARCO) return { s: 'atencao', why: dV === 0 ? `${qual} vence hoje` : `${qual} vence em ${-dV} dia${dV < -1 ? 's' : ''}` };
+    return { s: 'ok', why: '' };
+  }
+  const saudeDe = p => saudeInfo(p).s;
+  const isLate = p => { const d = diasVencido(p); return p.etapa !== 'concluido' && d != null && d > 0; };
   const staleDays = p => p.atualizadoEm ? daysBetween(new Date(p.atualizadoEm), new Date()) : 0;
   const isStale = p => p.etapa !== 'concluido' && staleDays(p) > STALE_DAYS;
   // Estacionado: pausado ou sem nenhuma atualização há mais de STALE_DAYS dias
@@ -627,8 +655,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 
   // ---------- Modelo ----------
   function blank(frente) {
-    return { titulo: '', frente: frente || 'alpmi', tags: [], etapa: 'nao_iniciado', horizonte: 'proximo', saude: 'ok',
-      responsavel: fr(frente || 'alpmi').lider, proximoPasso: '', marco: '', prazo: '', notas: '', meta: '', ordem: Date.now(),
+    return { titulo: '', frente: frente || 'alpmi', tags: [], etapa: 'nao_iniciado', horizonte: 'proximo',
+      responsavel: fr(frente || 'alpmi').lider, proximoPasso: '', marco: '', prazo: '', aguardando: '', aguardandoDesde: '', etapaDesde: '', notas: '', meta: '', ordem: Date.now(),
       atualizadoEm: new Date().toISOString(), concluidoEm: '' };
   }
   const norm = (id, d) => Object.assign(blank(), d || {}, { id, tags: Array.isArray(d && d.tags) ? d.tags : [] });
@@ -638,6 +666,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const filterActive = () => !!(state.q.trim() || state.resp);
   function matches(p) {
     if (state.resp && fold(p.responsavel).trim() !== fold(state.resp).trim()) return false;
+    if (state.q.trim() && fold(p.aguardando).includes(fold(state.q).trim())) return true;
     const q = fold(state.q).trim(); if (!q) return true;
     return [p.titulo, p.responsavel, p.proximoPasso, p.notas, fr(p.frente).nome, fr(p.frente).curto].concat(p.tags || []).some(v => fold(v).includes(q));
   }
@@ -760,19 +789,24 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 
   function rowHTML(p, compact, showFrente, hideWho) {
     const dc = dueClass(p);
+    const sd = saudeInfo(p), saude = sd.s;
     const f = fr(p.frente);
     const goal = p.meta && state.metas[p.meta] ? `<span class="chip goal" title="Meta que este projeto move">${esc(state.metas[p.meta].nome)}</span>` : '';
     const chips = (showFrente ? `<span class="chip fr" style="--fc:${f.cor}"><span class="sw" aria-hidden="true"></span>${f.curto}</span>` : '') + p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('') + goal;
     const etapa = p.etapa !== 'em_andamento' ? `<span class="chip etapa">${ETAPAS[p.etapa] || esc(p.etapa)}</span>` : '';
     const inc = p.horizonte === 'agora' && p.etapa !== 'concluido' && !agoraCompleto(p) ? `<span class="chip incompleto" title="Falta: ${esc(agoraFaltas(p).join(', '))}">Incompleto</span>` : '';
     const marco = p.marco && p.etapa !== 'concluido' ? `<span class="marco">Marco ${fmtDate(p.marco)}</span>` : '';
-    const due = p.prazo ? `<span class="due ${dc}"><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : '<span class="due"></span>';
+    const dA = diasAguardando(p);
+    const dE = diasNaEtapa(p);
+    const since = p.etapa !== 'concluido' ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
+    const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
+    const due = `<span class="due ${dc}">${p.prazo ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
     const stale = isStale(p) ? `<span class="stale">Sem atualização há ${staleDays(p)} dias</span>` : '';
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${stale}</span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}${stale}</span>${stepsHTML(p.proximoPasso)}`;
     return `<button class="row${p.etapa === 'pausado' ? ' paused' : ''}" data-open="${esc(p.id)}" type="button">
       <span class="grip" data-grip title="Arrastar para reordenar" aria-hidden="true">${I.grip}</span>
-      <span class="dot ${p.saude}" aria-hidden="true"></span>
-      <span class="main"><span class="title"><span class="sr-only">${SAUDE[p.saude]}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips} ${etapa}${inc}</span>${sub}</span>
+      <span class="dot ${saude}" aria-hidden="true"></span>
+      <span class="main"><span class="title"><span class="sr-only">${SAUDE[saude]}${sd.why ? ', ' + esc(sd.why) : ''}: </span>${esc(p.titulo) || '<em>Sem título</em>'} ${chips} ${etapa}${inc}</span>${sub}</span>
       ${due}${ringHTML(p)}${I.chev}</button>`;
   }
   function groupByFrente(list, compact, gray, sec) {
@@ -852,7 +886,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const done = all().filter(doneRecently);
     const nAnd = act.filter(p => p.etapa === 'em_andamento' || p.etapa === 'em_revisao').length;
     const nLate = act.filter(isLate).length;
-    const nRisk = act.filter(p => p.saude !== 'ok').length;
+    const nRisk = act.filter(p => saudeDe(p) !== 'ok').length;
+    const nEu = act.filter(p => fold(p.aguardando).trim() === fold(EU)).length;
     const nStale = parked.length;
     const pctAgora = agora.length ? Math.round(agora.filter(agoraCompleto).length / agora.length * 100) : null;
     const wip = {}; agora.forEach(p => { const r = String(p.responsavel || '').trim() || 'Sem dono'; wip[r] = (wip[r] || 0) + 1; });
@@ -872,6 +907,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <span class="${pctAgora == null ? '' : pctAgora < 100 ? 'warn' : 'ok'}" title="Pautas em Agora com próximo passo, responsável e data do próximo marco"><b class="num">${pctAgora == null ? '—' : pctAgora + '%'}</b>do Agora completo</span>
         <span class="${nRisk ? 'warn' : ''}"><b class="num">${nRisk}</b>atenção ou crítico</span>
         <span class="${nLate ? 'crit' : ''}"><b class="num">${nLate}</b>atrasados</span>
+        <span class="${nEu ? 'warn' : ''}" title="Pautas em que ${EU} é quem está segurando o próximo passo"><b class="num">${nEu}</b>aguardando ${EU}</span>
         <span class="${nStale ? 'warn' : ''}"><b class="num">${nStale}</b>estacionados</span>
         <span class="${done.length ? 'ok' : ''}"><b class="num">${done.length}</b>concluídos na semana</span>
       </div>
@@ -927,7 +963,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     act.forEach(p => { const k = String(p.responsavel || '').trim(); (by[k] = by[k] || []).push(p); });
     const names = Object.keys(by).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'pt-BR'));
     return `<div class="frentes-grid">${names.map(n => {
-      const items = by[n]; const late = items.filter(isLate).length; const risk = items.filter(p => p.saude !== 'ok').length;
+      const items = by[n]; const late = items.filter(isLate).length; const risk = items.filter(p => saudeDe(p) !== 'ok').length;
       const meta = [`${items.length} ativa${items.length > 1 ? 's' : ''}`, late ? `${late} atrasada${late > 1 ? 's' : ''}` : '', risk ? `${risk} em atenção` : ''].filter(Boolean).join(', ');
       const groups = ['agora', 'proximo', 'depois'].map(h => { const g = items.filter(p => p.horizonte === h); if (!g.length) return ''; return `<div class="hgroup" data-h="${h}"><div class="hh"><h3>${HORIZ[h]}</h3><span class="num">${g.length}</span></div><div class="list">${g.map(p => rowHTML(p, true, true, true)).join('')}</div></div>`; }).join('');
       const key = `resp:${n || '_'}`;
@@ -1005,6 +1041,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const o = state.opener; state.opener = null;
     if (o && document.contains(o)) o.focus(); else { const r = $('.row'); if (r) r.focus(); }
   }
+  const saudeLineHTML = p => { const sd = saudeInfo(p); return `<span class="dot ${sd.s}" aria-hidden="true"></span><b>${SAUDE[sd.s]}</b>${sd.why ? `<span class="why">, ${esc(sd.why)}</span>` : ''}<span class="how">Crítico: aguardando alguém há mais de ${DIAS_PARADO} dias ou marco vencido há mais de ${DIAS_MARCO}. Atrasado: marco vencido. Atenção: sem próximo passo, mais de ${DIAS_PARADO} dias no mesmo status ou marco em até ${DIAS_MARCO} dias.</span>`; };
   function renderDrawer(p, keepFocus) {
     const root = $('#drawerRoot');
     if (keepFocus && root.firstChild && document.activeElement && root.contains(document.activeElement)) return;
@@ -1019,7 +1056,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
           <h2 class="sr-only" id="drawerTitle">${p.titulo ? 'Editar ' + esc(p.titulo) : 'Novo projeto'}</h2>
           <div class="field"><input class="big" id="f-titulo" data-f="titulo" value="${esc(p.titulo)}" placeholder="Nome do projeto" aria-label="Nome do projeto"></div>
           <div class="field"><label id="lbl-horizonte">Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, false, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
-          <div class="field"><label id="lbl-saude">Saúde</label>${seg('saude', SAUDE, p.saude, true, 'Saúde')}</div>
+          <div class="field"><label id="lbl-saude">Saúde (calculada)</label><div class="saude-line" id="saudeLine" aria-labelledby="lbl-saude">${saudeLineHTML(p)}</div></div>
           <div class="field"><label for="f-next">Próximo passo</label><textarea id="f-next" class="next" data-f="proximoPasso" rows="${Math.min(10, Math.max(3, String(p.proximoPasso || '').split('\n').length + 1))}" placeholder="Comece com verbo no infinitivo: Aprovar KV, Enviar brief. Use - para tópicos e [ ] para checklist.">${esc(p.proximoPasso)}</textarea></div>
           <div class="grid2">
             <div class="field"><label for="f-resp">Responsável</label><input id="f-resp" data-f="responsavel" value="${esc(p.responsavel)}"></div>
@@ -1027,6 +1064,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
           </div>
           <div class="grid2">
             <div class="field"><label for="f-prazo">Prazo final</label><input type="date" id="f-prazo" data-f="prazo" value="${esc(p.prazo)}"></div>
+            <div class="field"><label for="f-aguard">Aguardando quem</label><input id="f-aguard" data-f="aguardando" value="${esc(p.aguardando)}" placeholder="John, agência, comercial, P&amp;D, cliente" list="aguardList"><datalist id="aguardList">${[...new Set(allRaw().map(x => String(x.aguardando || '').trim()).concat(allRaw().map(x => String(x.responsavel || '').trim())).filter(Boolean))].sort().map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
+          </div>
+          <div class="grid2">
             <div class="field"><label for="f-frente">Frente</label><select id="f-frente" data-f="frente">${FRENTES.map(x => `<option value="${x.id}" ${x.id === p.frente ? 'selected' : ''}>${x.nome}</option>`).join('')}</select></div>
           </div>
           <div class="grid2">
@@ -1093,8 +1133,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const sb = e.target.closest('.seg button'); if (sb) {
       if (sb.parentElement.dataset.seg === 'horizonte' && sb.dataset.val === 'agora' && p.horizonte !== 'agora' && !podeEntrarAgora(p)) { const first = { 'próximo passo': '#f-next', 'responsável': '#f-resp', 'data do próximo marco': '#f-marco' }[agoraFaltas(p)[0]]; const el = first && $(first); if (el) el.focus(); return; }
       p[sb.parentElement.dataset.seg] = sb.dataset.val; persist(p, true); if (sb.dataset.val === 'agora') avisarWip(p); renderDrawer(p, false); const again = document.querySelector(`[data-seg="${sb.parentElement.dataset.seg}"] [data-val="${sb.dataset.val}"]`); if (again) again.focus(); return; }
-    const bc = e.target.closest('#btnConcluir'); if (bc) { if (bc.dataset.arm) { p.etapa = 'concluido'; p.concluidoEm = new Date().toISOString(); persist(p, true); renderDrawer(p, false); } else { bc.dataset.arm = '1'; bc.querySelector('span').textContent = 'Confirmar: projeto terminou'; } return; }
-    if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
+    const bc = e.target.closest('#btnConcluir'); if (bc) { if (bc.dataset.arm) { p.etapa = 'concluido'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = p.etapaDesde; persist(p, true); renderDrawer(p, false); } else { bc.dataset.arm = '1'; bc.querySelector('span').textContent = 'Confirmar: projeto terminou'; } return; }
+    if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
     const ex = e.target.closest('#btnExcluir'); if (ex) { if (ex.dataset.arm) { remove(p); } else { ex.dataset.arm = '1'; ex.querySelector('span').textContent = 'Confirmar exclusão'; } return; }
     if (e.target.closest('#notasToggle')) { $('#notasField').classList.remove('collapsed'); $('#f-notas').focus(); return; }
   });
@@ -1165,10 +1205,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const f = e.target.dataset.f;
     if (f) {
       if (f === 'tags') p.tags = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+      else if (f === 'aguardando') { const v = e.target.value; const had = String(p.aguardando || '').trim(); if (!v.trim()) { p.aguardando = ''; p.aguardandoDesde = ''; } else { if (!had) p.aguardandoDesde = new Date().toISOString(); p.aguardando = v; } }
+      else if (f === 'etapa') { if (e.target.value !== p.etapa) p.etapaDesde = new Date().toISOString(); p.etapa = e.target.value; }
       else p[f] = e.target.value;
       if (f === 'frente') { persist(p, true); renderDrawer(p, false); $('#f-frente').focus(); return; }
       if (f === 'etapa') { if (p.etapa === 'concluido') p.concluidoEm = p.concluidoEm || new Date().toISOString(); else p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); $('#f-etapa').focus(); return; }
       if (e.target.tagName === 'TEXTAREA' && e.target.classList.contains('next')) { e.target.rows = Math.min(10, Math.max(3, e.target.value.split('\n').length + 1)); }
+      if (f === 'proximoPasso' || f === 'marco' || f === 'prazo' || f === 'aguardando') { const sl = $('#saudeLine'); if (sl) sl.innerHTML = saudeLineHTML(p); }
       if (f === 'proximoPasso' || f === 'responsavel' || f === 'marco') { const r = $('#agoraRegra'); const fl = agoraFaltas(p); if (r) { if (!fl.length) r.remove(); else r.textContent = p.horizonte === 'agora' ? `Incompleto para Agora. Falta: ${fl.join(', ')}.` : 'Para entrar em Agora: próximo passo, responsável e data do próximo marco.'; } }
       persist(p, false); return;
     }
@@ -1217,9 +1260,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       if (sec === 'agora' && p.horizonte !== 'agora' && !podeEntrarAgora(p)) return false;
       p.horizonte = { agora: 'agora', fila: 'proximo', backlog: 'depois' }[sec];
       if (sec === 'agora') setTimeout(() => avisarWip(p), 0);
-      if (p.etapa === 'pausado' || p.etapa === 'concluido') { p.etapa = 'em_andamento'; p.concluidoEm = ''; }
-    } else if (sec === 'parked') { p.etapa = 'pausado'; p.concluidoEm = ''; }
-    else if (sec === 'done') { p.etapa = 'concluido'; p.concluidoEm = now; }
+      if (p.etapa === 'pausado' || p.etapa === 'concluido') { p.etapa = 'em_andamento'; p.etapaDesde = now; p.concluidoEm = ''; }
+    } else if (sec === 'parked') { if (p.etapa !== 'pausado') p.etapaDesde = now; p.etapa = 'pausado'; p.concluidoEm = ''; }
+    else if (sec === 'done') { if (p.etapa !== 'concluido') p.etapaDesde = now; p.etapa = 'concluido'; p.concluidoEm = now; }
   }
   function reorder(id, orderedIds, focusId) {
     const p = state.projects[id]; if (!p) return false;
@@ -1327,7 +1370,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const backlog = act.filter(p => p.horizonte === 'depois' && !isParked(p));
     return { frentes, atencao, done, fila, backlog };
   }
-  const statusTxt = p => [SAUDE[p.saude], isLate(p) ? 'atrasado' : '', p.etapa === 'pausado' ? 'pausado' : '', isStale(p) ? `sem atualização há ${staleDays(p)} dias` : ''].filter(Boolean).join(', ');
+  const statusTxt = p => { const sd = saudeInfo(p); const dA = diasAguardando(p); return [SAUDE[sd.s] + (sd.why && sd.s !== 'ok' ? ' (' + sd.why + ')' : ''), dA != null && !/^aguardando/.test(sd.why) ? `aguardando ${p.aguardando.trim()} há ${dA} dia${dA === 1 ? '' : 's'}` : '', p.etapa === 'pausado' ? 'pausado' : '', isStale(p) ? `sem atualização há ${staleDays(p)} dias` : ''].filter(Boolean).join(', '); };
   function resumoHTML() {
     const { frentes, atencao, done, fila, backlog } = resumoDados();
     const F = 'font-family:Calibri,Arial,sans-serif;';
