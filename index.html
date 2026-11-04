@@ -122,6 +122,9 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 .menu .sw { width: 12px; height: 12px; border-radius: 3px; background: var(--fc); flex: none; }
 /* Soltar em outro horizonte (Por frente) */
 .hgroup.drop-target { box-shadow: inset 0 0 0 2px var(--blue); border-radius: 8px; }
+/* Soltar em outra seção da Semana (Prioridades, Estacionados, Na fila, Backlog, Concluídos) */
+section.block.drop-target { outline: 2px dashed var(--blue); outline-offset: 12px; border-radius: 12px; }
+section.block.drop-target .block-head h2 { color: var(--blue); }
 
 /* Página */
 main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-area-inset-left, 0px)) 120px max(16px, env(safe-area-inset-right, 0px)); }
@@ -743,15 +746,15 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <span class="${done.length ? 'ok' : ''}"><b class="num">${done.length}</b>concluídos na semana</span>
         ${mAll.length ? `<span class="${mOk === mAll.length ? 'ok' : ''}"><b class="num">${mOk}/${mAll.length}</b>metas no alvo</span>` : ''}
       </div>
-      <section class="block">${head('Prioridades da semana', 'O que está no horizonte “Agora”. Abra um projeto para atualizar o próximo passo.')}
-        ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte.</div>'}</section>
-      <section class="block">${head('Estacionados', `Projetos pausados ou sem nenhuma atualização há mais de ${STALE_DAYS} dias. Decidir na reunião: retomar, adiar ou encerrar.`)}
-        ${parked.length ? groupByFrente(parked, false, false, 'parked') : '<div class="empty">Nenhum projeto estacionado.</div>'}</section>
-      <section class="block">${head('Na fila', 'Projetos com horizonte “Próximo”. Entram nas prioridades quando algo do “Agora” for concluído.')}
-        ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia.</div>'}</section>
-      <section class="block">${head('Backlog de ideias e projetos', 'Projetos com horizonte “Depois” e ideias ainda embrionárias. Sem compromisso de data.')}
-        ${depois.length ? groupByFrente(depois, true, 'backlog', 'backlog') : '<div class="empty">Backlog vazio. Cadastre uma ideia e marque o horizonte como “Depois”.</div>'}</section>
-      <section class="block">${head('Concluídos na semana', 'Últimos 7 dias.')}
+      <section class="block" data-sec="agora">${head('Prioridades da semana', 'O que está no horizonte “Agora”. Abra um projeto para atualizar o próximo passo, ou arraste pautas entre as seções.')}
+        ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada marcado como “Agora”. Abra um projeto e defina o horizonte, ou arraste uma pauta para cá.</div>'}</section>
+      <section class="block" data-sec="parked">${head('Estacionados', `Projetos pausados ou sem nenhuma atualização há mais de ${STALE_DAYS} dias. Decidir na reunião: retomar, adiar ou encerrar.`)}
+        ${parked.length ? groupByFrente(parked, false, false, 'parked') : '<div class="empty">Nenhum projeto estacionado. Arraste uma pauta para cá para pausá-la.</div>'}</section>
+      <section class="block" data-sec="fila">${head('Na fila', 'Projetos com horizonte “Próximo”. Entram nas prioridades quando algo do “Agora” for concluído.')}
+        ${proximo.length ? groupByFrente(proximo, true, true, 'fila') : '<div class="empty">Fila vazia. Arraste uma pauta para cá.</div>'}</section>
+      <section class="block" data-sec="backlog">${head('Backlog de ideias e projetos', 'Projetos com horizonte “Depois” e ideias ainda embrionárias. Sem compromisso de data.')}
+        ${depois.length ? groupByFrente(depois, true, 'backlog', 'backlog') : '<div class="empty">Backlog vazio. Cadastre uma ideia e marque o horizonte como “Depois”, ou arraste uma pauta para cá.</div>'}</section>
+      <section class="block" data-sec="done">${head('Concluídos na semana', 'Últimos 7 dias. Arraste uma pauta para cá para concluí-la.')}
         ${done.length ? groupByFrente(done, true, false, 'done') : '<div class="empty">Nada concluído nesta semana ainda.</div>'}</section>
       </div></div>`;
   }
@@ -989,7 +992,16 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   document.addEventListener('focusout', e => { if (e.target && e.target.dataset && e.target.dataset.meta === 'avisos') setTimeout(() => { if (!document.activeElement || document.activeElement.dataset.meta !== 'avisos') render(); }, 0); });
 
   // ---------- Reordenar: arrastar pela alça (mouse e toque) ----------
-  const drag = { src: null, ghost: null, list: null, origList: null, panel: null, startY: 0, startX: 0, offY: 0, active: false, suppressClick: false, pointerId: null };
+  const drag = { src: null, ghost: null, list: null, origList: null, panel: null, sec: null, overSec: null, startY: 0, startX: 0, offY: 0, active: false, suppressClick: false, pointerId: null };
+  // O que acontece com a pauta ao ser solta numa seção da Semana
+  function applySection(p, sec) {
+    const now = new Date().toISOString();
+    if (sec === 'agora' || sec === 'fila' || sec === 'backlog') {
+      p.horizonte = { agora: 'agora', fila: 'proximo', backlog: 'depois' }[sec];
+      if (p.etapa === 'pausado' || p.etapa === 'concluido') { p.etapa = 'em_andamento'; p.concluidoEm = ''; }
+    } else if (sec === 'parked') { p.etapa = 'pausado'; p.concluidoEm = ''; }
+    else if (sec === 'done') { p.etapa = 'concluido'; p.concluidoEm = now; }
+  }
   function reorder(id, orderedIds, focusId) {
     const p = state.projects[id]; if (!p) return false;
     const i = orderedIds.indexOf(id);
@@ -1019,7 +1031,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const grip = e.target.closest('[data-grip]'); if (!grip || state.canWrite === false) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const row = grip.closest('.row'); if (!row) return;
-    drag.src = row; drag.list = row.parentElement; drag.origList = row.parentElement; drag.panel = row.closest('.panel'); drag.startY = e.clientY; drag.startX = e.clientX; drag.active = false; drag.pointerId = e.pointerId;
+    drag.src = row; drag.list = row.parentElement; drag.origList = row.parentElement; drag.panel = row.closest('.panel'); drag.sec = row.closest('section.block[data-sec]'); drag.overSec = null; drag.startY = e.clientY; drag.startX = e.clientX; drag.active = false; drag.pointerId = e.pointerId;
     try { grip.setPointerCapture(e.pointerId); } catch (x) {}
     e.preventDefault();
   });
@@ -1040,24 +1052,35 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       groups.forEach(g => g.classList.toggle('drop-target', !!over && g === over && g.querySelector('.list') !== drag.origList));
       if (over) { const l = over.querySelector('.list'); if (l && l !== drag.list) { l.appendChild(drag.src); drag.list = l; } }
     }
-    const rows = [...drag.list.querySelectorAll(':scope > .row')].filter(r => r !== drag.src);
-    let target = null;
-    for (const r of rows) { const b = r.getBoundingClientRect(); if (e.clientY < b.top + b.height / 2) { target = r; break; } }
-    if (target) { if (target.previousElementSibling !== drag.src) drag.list.insertBefore(drag.src, target); }
-    else if (drag.list.lastElementChild !== drag.src) drag.list.appendChild(drag.src);
+    // Na aba Semana, soltar sobre outra seção muda horizonte, pausa, conclui ou reabre a pauta
+    if (drag.sec) {
+      const secs = [...document.querySelectorAll('section.block[data-sec]')];
+      const over = secs.find(sc => { const b = sc.getBoundingClientRect(); return e.clientY >= b.top - 12 && e.clientY <= b.bottom + 12; });
+      drag.overSec = over && over !== drag.sec ? over : null;
+      secs.forEach(sc => sc.classList.toggle('drop-target', sc === drag.overSec));
+    }
+    if (!drag.overSec) {
+      const rows = [...drag.list.querySelectorAll(':scope > .row')].filter(r => r !== drag.src);
+      let target = null;
+      for (const r of rows) { const b = r.getBoundingClientRect(); if (e.clientY < b.top + b.height / 2) { target = r; break; } }
+      if (target) { if (target.previousElementSibling !== drag.src) drag.list.insertBefore(drag.src, target); }
+      else if (drag.list.lastElementChild !== drag.src) drag.list.appendChild(drag.src);
+    }
     // rola a página quando chega perto da borda
     const m = 56; if (e.clientY < m) window.scrollBy(0, -12); else if (e.clientY > window.innerHeight - m) window.scrollBy(0, 12);
   });
   function endDrag(e) {
     if (!drag.src || (e && e.pointerId !== drag.pointerId)) return;
-    const src = drag.src, list = drag.list, was = drag.active;
+    const src = drag.src, list = drag.list, was = drag.active, overSec = drag.overSec;
     if (drag.ghost) drag.ghost.remove();
     src.classList.remove('drag-src'); document.body.classList.remove('is-dragging');
     if (drag.panel) drag.panel.querySelectorAll('.hgroup.drop-target').forEach(g => g.classList.remove('drop-target'));
-    drag.src = null; drag.ghost = null; drag.list = null; drag.origList = null; drag.panel = null; drag.active = false; drag.pointerId = null;
+    document.querySelectorAll('section.block.drop-target').forEach(sc => sc.classList.remove('drop-target'));
+    drag.src = null; drag.ghost = null; drag.list = null; drag.origList = null; drag.panel = null; drag.sec = null; drag.overSec = null; drag.active = false; drag.pointerId = null;
     if (!was) return;
     drag.suppressClick = true; setTimeout(() => { drag.suppressClick = false; }, 300);
     const id = src.dataset.open, p = state.projects[id];
+    if (overSec && p) { applySection(p, overSec.dataset.sec); persist(p, true); return; }
     const grp = list.closest('.hgroup'); const h = grp && grp.dataset.h;
     let moved = false;
     if (p && h && HORIZ[h] && p.horizonte !== h) { p.horizonte = h; p.atualizadoEm = new Date().toISOString(); moved = true; }
