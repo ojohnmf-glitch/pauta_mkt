@@ -717,7 +717,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const key = 'sc:' + g.id; const ok = items.filter(m => metaClass(m) === 'ok').length;
       const pend = items.filter(m => (m.tipo === 'numero' && (!hasTarget(m) || m.atual == null)) || (m.tipo === 'entrega' && m.status === 'nao_iniciado') || (m.tipo === 'rag' && m.status === 'sem')).length;
       const last = items.map(m => m.atualizadoEm || '').sort().pop();
-      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}</span>${TG}</div>
+      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}${g.gray ? '' : ';--fct:#ffffff;--fct2:rgba(255,255,255,.8)'}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}</span>${TG}</div>
         <div class="list sc-list">${items.map(metaRowHTML).join('')}</div>${last ? `<div class="sc-stamp">Atualizado ${new Date(last).toLocaleDateString('pt-BR')}</div>` : ''}</div>`;
     }).join('')}</div>`;
   }
