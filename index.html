@@ -180,9 +180,11 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .kpi-strip b { font-weight: 600; color: var(--ink); margin-right: 3px; }
 .kpi-strip .warn b { color: var(--warn-text); } .kpi-strip .crit b { color: var(--crit-text); } .kpi-strip .ok b { color: var(--ok-text); }
 /* Scorecard na lateral: cartões empilhados e compactos */
-.side-title { font-size: 13px; font-weight: 600; color: var(--ash); padding: 2px 2px 0; line-height: 1.4; }
-.side .sc-grid { grid-template-columns: 1fr; gap: 12px; }
-.side .sc { padding: 0 12px 6px; border-radius: 12px; }
+.sc-wrap { background: var(--paper); border-radius: 12px; box-shadow: var(--shadow); padding: 10px 12px 12px; }
+.side-title { font-size: 13px; font-weight: 600; color: var(--ink); padding: 0 2px 10px; line-height: 1.4; }
+.side .sc-grid { grid-template-columns: 1fr; gap: 8px; }
+.side .sc { padding: 0 12px 6px; border-radius: 8px; box-shadow: none; border: 1px solid var(--hairline); }
+.side .sc.collapsed { padding-bottom: 0; }
 .side .sc .frente-head { padding: 8px 12px; margin: 0 -12px 2px; font-size: 12px; }
 .side .sc-row { grid-template-columns: 1fr; gap: 4px 0; padding: 8px 0; }
 .side .sc-name { font-size: 13px; }
@@ -447,7 +449,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const STALE_DAYS = 14;
   // Scorecard: grupos de metas (área, corporativas e uma por frente). Metas vivem na mesma coleção, ids "_m_…"
   const METAS_GRUPOS = [
-    { id: 'empresa', nome: 'Metas da empresa', cor: 'var(--ink)', soft: 'var(--paper)' },
+    { id: 'empresa', nome: 'Metas empresa', cor: 'var(--ink)', soft: 'var(--paper)' },
     { id: 'john', nome: 'John', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
     { id: 'luis', nome: 'Luis', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
     { id: 'andre', nome: 'André', cor: 'var(--f-fila)', soft: 'var(--paper)', gray: true },
@@ -459,14 +461,14 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     ['empresa', 'Margem da carne (R$)', 'Friboi', 'numero', 'R$'],
     ['empresa', 'Volume de vendas ME e MI', 'ALP', 'numero', ''],
     ['empresa', 'Volume PVA', 'MI', 'numero', ''],
-    ['empresa', 'Volume de vendas resfriado', 'ME', 'numero', ''],
+    ['empresa', 'Volume de vendas resfriado', 'IN ME', 'numero', ''],
     ['john', 'Volume inovação', 'ALP + INN ME', 'numero', ''],
-    ['john', 'Expansão de PVAs no Sudeste Asiático', '', 'entrega', ''],
+    ['john', 'Expansão de PVAs no Sudeste Asiático', '', 'numero', 'PVAs'],
     ['john', 'Plano de marketing Indonésia', '', 'entrega', ''],
     ['john', 'Lançamento linha alta proteína MI', '', 'entrega', ''],
     ['luis', 'Volume inovação', 'ALP ME + INN ME', 'numero', ''],
     ['luis', 'Plataforma hambúrguer Chile', '', 'entrega', ''],
-    ['luis', 'Expansão de PVAs no Sudeste Asiático', '', 'entrega', ''],
+    ['luis', 'Expansão de PVAs no Sudeste Asiático', '', 'numero', 'PVAs'],
     ['andre', 'Volume inovação', 'ALP MI', 'numero', ''],
     ['andre', 'Lançamento linha alta proteína MI', '', 'entrega', ''],
     ['andre', 'Revitalização embalagens Bordon, Kitut, Target', '', 'entrega', ''],
@@ -727,8 +729,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
     return `<div class="semana">
       <aside class="side" aria-label="Metas, avisos e férias">
-      <h2 class="side-title">Metas do time</h2>
-      ${scorecardHTML()}
+      <section class="sc-wrap" aria-label="Metas do time"><h2 class="side-title">Metas do time</h2>
+      ${scorecardHTML()}</section>
       ${avisosHTML()}${feriasHTML()}
       </aside>
       <div class="semana-main">
@@ -1232,6 +1234,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     state.db.collection('projetos').onSnapshot(snap => {
       const next = {}, nextM = {};
       snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_avisos' && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
+      // Ajustes em metas já gravadas (uma vez, só no que ainda está no formato antigo)
+      Object.values(nextM).forEach(m => {
+        let ch = false;
+        if (m.nome === 'Expansão de PVAs no Sudeste Asiático' && m.tipo === 'entrega') { m.tipo = 'numero'; m.unidade = 'PVAs'; m.status = 'sem'; m.meta = m.meta == null ? null : m.meta; ch = true; }
+        if (m.nome === 'Volume de vendas resfriado' && m.escopo === 'ME') { m.escopo = 'IN ME'; ch = true; }
+        if (ch && state.canWrite !== false && state.db) { const body = Object.assign({}, m); delete body.id; state.db.doc('projetos/' + m.id).set(body).catch(() => {}); }
+      });
       state.projects = next; state.metas = nextM; state.loaded = true;
       if (shared && state.canWrite !== false) loading.hidden = true;
       if (!Object.keys(nextM).length && state.canWrite !== false && !state.seeded) {
