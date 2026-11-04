@@ -196,6 +196,8 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .ferias-item .dt { color: var(--fog); display: block; line-height: 1.3; }
 .ferias-item.now .dt { color: var(--ok-text); font-weight: 600; }
 .ferias-item .rm { margin-left: auto; border: 0; background: transparent; color: var(--silver); width: 20px; height: 20px; border-radius: 4px; display: grid; place-items: center; padding: 0; flex: none; }
+.ferias-item .rm[data-arm] { width: auto; padding: 0 8px; font-size: 11px; font-weight: 600; color: var(--crit-text); background: var(--danger-soft); }
+.ferias-item.photo .rm[data-arm] { background: var(--crit-text); color: var(--on-accent); }
 .ferias-item .rm:hover { color: var(--crit-text); background: var(--mist); }
 /* Férias com foto de fundo: nome e período em branco sobre um painel cinza translúcido */
 .ferias-item.photo { position: relative; min-height: 92px; border-radius: 10px; background-size: cover; background-position: center; padding: 10px; margin: 6px 0; border-top: 0; align-items: flex-end; overflow: hidden; }
@@ -408,7 +410,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .seg button.ok[aria-pressed="true"] { border-color: var(--ok); color: var(--ok-text); }
 .seg button.atencao[aria-pressed="true"] { border-color: var(--warn); color: var(--warn-text); }
 .seg button.critico[aria-pressed="true"] { border-color: var(--crit); color: var(--crit-text); }
-.drawer-foot { margin-top: auto; padding: 16px var(--card-pad) calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hairline); display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--fog); }
+.drawer-foot { margin-top: auto; padding: 16px var(--card-pad) calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hairline); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--fog); }
 .savestate { margin-right: auto; line-height: 1.4; }
 .meta-line { color: var(--fog); font-size: 13px; line-height: 1.4; }
 .readonly .add, .readonly .danger, .readonly #btnConcluir, .readonly #btnReabrir { display: none; }
@@ -444,6 +446,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .frentes-grid { grid-template-columns: 1fr; }
   .drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; max-height: 92dvh; border-radius: var(--r-card) var(--r-card) 0 0; margin-top: 0; }
   .drawer::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 9999px; background: var(--hairline); margin: 12px auto 0; }
+  .drawer-foot .savestate { flex-basis: 100%; margin-right: 0; }
+  .drawer-foot .btn { flex: 1 1 auto; }
+  .field input.big { font-size: 20px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .drawer { animation: slide .22s cubic-bezier(.2,.8,.2,1); }
@@ -716,7 +721,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     else c.innerHTML = viewConcluidos();
     fitSide();
     if (state.selected && state.projects[state.selected]) renderDrawer(state.projects[state.selected], true);
-    const cards = [...c.querySelectorAll('[data-key]')]; const btn = $('#btnToggleAll');
+    const cards = [...c.querySelectorAll('[data-key]')].filter(el => !el.closest('.side')); const btn = $('#btnToggleAll');
     btn.hidden = !cards.length;
     if (cards.length) { const allClosed = cards.every(el => collapsed.has(el.dataset.key)); $('#toggleAllLabel').textContent = allClosed ? 'Expandir tudo' : 'Recolher tudo'; btn.setAttribute('aria-expanded', !allClosed); }
   }
@@ -1028,7 +1033,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (e.target.closest('#btnSearch')) { state.ui.searchOpen = true; render(); $('#q').focus(); return; }
     if (e.target.closest('#qClear')) { state.q = ''; $('#q').value = ''; state.ui.searchOpen = false; render(); $('#btnSearch').focus(); return; }
     const tgc = e.target.closest('[data-toggle-card]'); if (tgc) { const card = tgc.closest('[data-key]'); const k = card.dataset.key; if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k); saveCollapsed(); render(); const again = document.querySelector(`[data-key="${CSS.escape(k)}"] .tg`); if (again && e.target.closest('.tg')) again.focus(); return; }
-    if (e.target.closest('#btnToggleAll')) { const cards = [...document.querySelectorAll('#content [data-key]')]; const allClosed = cards.every(el => collapsed.has(el.dataset.key)); cards.forEach(el => { if (allClosed) collapsed.delete(el.dataset.key); else collapsed.add(el.dataset.key); }); saveCollapsed(); render(); return; }
+    if (e.target.closest('#btnToggleAll')) { const cards = [...document.querySelectorAll('#content [data-key]')].filter(el => !el.closest('.side')); const allClosed = cards.every(el => collapsed.has(el.dataset.key)); cards.forEach(el => { if (allClosed) collapsed.delete(el.dataset.key); else collapsed.add(el.dataset.key); }); saveCollapsed(); render(); return; }
     const tab = e.target.closest('.tab'); if (tab) { selectTab(tab); return; }
     // Notas
     if (e.target.closest('#notaNova')) { if (state.canWrite === false) return; state.ui.notaDraft = { id: null, titulo: '', data: isoToday(), tipo: 'reuniao', texto: '' }; render(); const t = $('#nf-titulo'); if (t) t.focus(); return; }
@@ -1114,7 +1119,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       itens.push(Object.assign({ id: 'f' + Date.now().toString(36), nome, inicio: ini <= fim ? ini : fim, fim: ini <= fim ? fim : ini }, state.ui.feriasFoto ? { foto: state.ui.feriasFoto } : {}));
       state.meta._ferias.itens = itens; state.ui.feriasForm = false; state.ui.feriasFoto = null; persistMeta('_ferias', true); render(); return;
     }
-    const rm = e.target.closest('[data-fr-rm]'); if (rm) { if (state.canWrite === false) return; state.meta._ferias.itens = (state.meta._ferias.itens || []).filter(i => i.id !== rm.dataset.frRm); persistMeta('_ferias', true); render(); return; }
+    const rm = e.target.closest('[data-fr-rm]'); if (rm) { if (state.canWrite === false) return; if (!rm.dataset.arm) { rm.dataset.arm = '1'; rm.textContent = 'Remover?'; rm.setAttribute('aria-label', 'Confirmar remoção'); return; } state.meta._ferias.itens = (state.meta._ferias.itens || []).filter(i => i.id !== rm.dataset.frRm); persistMeta('_ferias', true); render(); return; }
   });
   document.addEventListener('input', e => {
     if (e.target.id === 'q') { state.q = e.target.value; render(); return; }
