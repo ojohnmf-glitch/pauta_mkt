@@ -231,6 +231,11 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .pill.crit { background: var(--crit-text); border-color: var(--crit-text); color: var(--on-accent); }
 .pill.prog { background: var(--blue-tint); border-color: var(--blue); color: var(--blue); }
 .sc-stamp { font-size: 11px; color: var(--silver); padding: 8px 0 2px; }
+/* Bandeira vermelha: meta abaixo de 75% do alvo ou marcada como "Abaixo" */
+.flag { width: 12px; height: 12px; fill: var(--crit); vertical-align: -1px; margin-right: 5px; flex: none; }
+.sc-row.alert .sc-name { color: var(--crit-text); }
+.frente-head .alert-cnt { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--crit-text); font-weight: 600; }
+.frente-head .alert-cnt .flag { margin: 0; }
 .chip.goal { background: var(--blue-tint); color: var(--blue); }
 .readonly .sc-val input, .readonly .pill { pointer-events: none; }
 
@@ -692,6 +697,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     return m.status === 'ok' ? 'ok' : m.status === 'warn' ? 'warn' : m.status === 'crit' ? 'crit' : '';
   }
   const metaStatusTxt = m => m.tipo === 'numero' ? (!hasTarget(m) ? 'meta a definir' : metaPct(m) == null ? `sem valor, meta ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''}` : `${fmtNum(m.atual)} de ${fmtNum(m.meta)}${m.unidade ? ' ' + m.unidade : ''} (${Math.round(metaPct(m))}%)`) : m.tipo === 'entrega' ? (ENTREGA[m.status] || ENTREGA.nao_iniciado) : ((RAG[m.status] || RAG.sem) + (m.atual ? ', ' + m.atual : ''));
+  const FLAG = '<svg class="flag" viewBox="0 0 16 16" role="img" aria-label="abaixo do esperado"><path d="M3 1.5v13.5h1.6V9.6h8.4L10.9 6l2.1-3.6H4.6V1.5z"/></svg>';
   function metaRowHTML(m) {
     const ro = state.canWrite === false ? 'disabled' : '';
     const info = [m.escopo ? `<span>${esc(m.escopo)}</span>` : '', m.dono ? `<span>${esc(m.dono)}</span>` : '', m.peso ? `<span>peso ${esc(m.peso)}</span>` : '', m.obs ? `<span>${esc(m.obs)}</span>` : ''].join('');
@@ -707,7 +713,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const st = RAG[m.status] ? m.status : 'sem';
       right = `<span class="sc-val"><input type="text" data-mtxt="${esc(m.id)}" value="${esc(m.atual || '')}" placeholder="ex.: 98% do orçado" aria-label="Comentário de ${esc(m.nome)}" ${ro}><button class="pill ${metaClass(m)}" type="button" data-mcycle="${esc(m.id)}" title="Clique para mudar a situação" ${ro}>${RAG[st]}</button></span>`;
     }
-    return `<div class="sc-row"><span><span class="sc-name">${esc(m.nome)}</span><span class="sc-meta">${info}</span></span>${right}${bar}</div>`;
+    const alert = metaClass(m) === 'crit';
+    return `<div class="sc-row${alert ? ' alert' : ''}"><span><span class="sc-name">${alert ? FLAG : ''}${esc(m.nome)}</span><span class="sc-meta">${info}</span></span>${right}${bar}</div>`;
   }
   function scorecardHTML() {
     const list = metasAll();
@@ -717,7 +724,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       const key = 'sc:' + g.id; const ok = items.filter(m => metaClass(m) === 'ok').length;
       const pend = items.filter(m => (m.tipo === 'numero' && (!hasTarget(m) || m.atual == null)) || (m.tipo === 'entrega' && m.status === 'nao_iniciado') || (m.tipo === 'rag' && m.status === 'sem')).length;
       const last = items.map(m => m.atualizadoEm || '').sort().pop();
-      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}${g.gray ? '' : ';--fct:#ffffff;--fct2:rgba(255,255,255,.8)'}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}</span>${TG}</div>
+      const nAlert = items.filter(m => metaClass(m) === 'crit').length;
+      return `<div class="sc frente-group${g.gray ? ' gray' : ''}${collapsed.has(key) ? ' collapsed' : ''}" data-key="${esc(key)}" style="--fc:${g.cor};--fcs:${g.soft}${g.gray ? '' : ';--fct:#ffffff;--fct2:rgba(255,255,255,.8)'}"><div class="frente-head" data-toggle-card>${g.nome}<span class="cnt num">${ok ? ok + ' no alvo' : ''}${ok && pend ? ', ' : ''}${pend ? pend + ' a preencher' : ''}${!ok && !pend ? items.length + ' metas' : ''}${nAlert ? `<span class="alert-cnt">${FLAG}${nAlert}</span>` : ''}</span>${TG}</div>
         <div class="list sc-list">${items.map(metaRowHTML).join('')}</div>${last ? `<div class="sc-stamp">Atualizado ${new Date(last).toLocaleDateString('pt-BR')}</div>` : ''}</div>`;
     }).join('')}</div>`;
   }
