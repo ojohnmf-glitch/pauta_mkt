@@ -428,14 +428,15 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .cal-title { font-size: 24px; font-weight: 800; letter-spacing: -0.025em; }
 .cal-btns { display: flex; gap: 4px; }
-.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-inline: calc(-1 * clamp(0px, (100vw - var(--page)) / 2 - 24px, 140px)); }
+.cal-nav, .cal-legend { margin-inline: calc(-1 * clamp(0px, (100vw - var(--page)) / 2 - 24px, 140px)); }
 .cal-head { font-size: 12px; font-weight: 600; color: var(--fog); text-align: center; padding: 4px 0; }
-.cal-cell { min-height: 104px; background: var(--paper); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cal-cell { min-height: 150px; background: var(--paper); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cal-cell.weekend { background: var(--mist); box-shadow: none; }
 .cal-cell.other { opacity: .45; }
 .cal-cell .day { font-size: 12px; color: var(--fog); line-height: 1; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 999px; align-self: flex-start; }
 .cal-cell.today .day { background: var(--primary); color: var(--on-accent); font-weight: 600; }
-.cal-chip { display: block; width: 100%; text-align: left; border: 0; border-radius: 4px; padding: 3px 6px; font-size: 12px; line-height: 1.3; color: var(--ink); background: color-mix(in srgb, var(--fc) 55%, var(--paper)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.cal-chip { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; width: 100%; text-align: left; border: 0; border-radius: 5px; padding: 4px 7px; font-size: 12.5px; line-height: 1.3; color: var(--ink); background: color-mix(in srgb, var(--fc) 55%, var(--paper)); overflow: hidden; overflow-wrap: anywhere; cursor: pointer; }
 .cal-chip:hover { background: var(--fc); }
 .cal-chip.late { color: var(--crit-text); font-weight: 600; }
 .cal-more { font-size: 11px; color: var(--fog); padding-left: 6px; }
@@ -505,7 +506,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .tab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   .row { grid-template-columns: 12px 10px minmax(0, 1fr) 24px 14px; }
   .row .due { grid-column: 3; text-align: left; align-items: flex-start; }
-  .cal { gap: 2px; } .cal-cell { min-height: 64px; padding: 4px; border-radius: 6px; } .cal-chip { font-size: 10px; padding: 2px 4px; } .cal-title { font-size: 20px; }
+  .cal, .cal-nav, .cal-legend { margin-inline: 0; } .cal { gap: 2px; } .cal-cell { min-height: 72px; padding: 4px; border-radius: 6px; } .cal-chip { font-size: 10px; padding: 2px 4px; -webkit-line-clamp: 3; } .cal-title { font-size: 20px; }
   .frentes-grid { grid-template-columns: 1fr; }
   .drawer { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; max-height: 92dvh; border-radius: var(--r-card) var(--r-card) 0 0; margin-top: 0; }
   .drawer::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 9999px; background: var(--hairline); margin: 12px auto 0; }
@@ -1017,7 +1018,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const cells = []; const todayKey = keyOf(t);
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const k = keyOf(d); const items = (byDay[k] || []).slice().sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); const other = d.getMonth() !== ref.m; const wk = d.getDay() === 0 || d.getDay() === 6;
-      const chips = items.slice(0, 4).map(p => { const f = fr(p.frente); const late = isLate(p); return `<button class="cal-chip${late ? ' late' : ''}" type="button" data-open="${esc(p.id)}" style="--fc:${f.cor}" title="${esc(p.titulo)}, ${esc(f.curto)}${p.responsavel ? ', ' + esc(p.responsavel) : ''}${late ? ', vencido' : ''}">${esc(p.titulo)}</button>`; }).join('') + (items.length > 4 ? `<span class="cal-more">+${items.length - 4}</span>` : '');
+      const chips = items.slice(0, 5).map(p => { const f = fr(p.frente); const late = isLate(p); return `<button class="cal-chip${late ? ' late' : ''}" type="button" data-open="${esc(p.id)}" style="--fc:${f.cor}" title="${esc(p.titulo)}, ${esc(f.curto)}${p.responsavel ? ', ' + esc(p.responsavel) : ''}${late ? ', vencido' : ''}">${esc(p.titulo)}</button>`; }).join('') + (items.length > 5 ? `<span class="cal-more">+${items.length - 5}</span>` : '');
       cells.push(`<div class="cal-cell${other ? ' other' : ''}${wk ? ' weekend' : ''}${k === todayKey ? ' today' : ''}"><span class="day num">${d.getDate()}</span>${chips}</div>`);
     }
     const nav = `<div class="cal-nav"><h2 class="cal-title">${title.charAt(0).toUpperCase() + title.slice(1)}</h2><div class="cal-btns"><button class="btn text" type="button" data-cal="-1" aria-label="Mês anterior"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button class="btn text" type="button" data-cal="0">Hoje</button><button class="btn text" type="button" data-cal="1" aria-label="Próximo mês"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div>`;
