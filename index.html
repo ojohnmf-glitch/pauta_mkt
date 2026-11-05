@@ -1464,15 +1464,15 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   // ---------- Resumo para e-mail: HTML (Outlook, Gmail) + texto simples ----------
   // Registro da pauta enviada: só os próximos passos, por frente, do que está em Agora
   function pautaTexto() {
-    const L = [];
+    const L = ['Abaixo principais to do’s pra próxima semana e discutidos na nossa reunião:', ''];
     resumoDados().frentes.forEach(({ f, items }) => {
-      L.push(f.nome.toUpperCase());
+      L.push(f.nome.toUpperCase(), '');
       items.forEach(p => {
         const meta = [p.responsavel ? 'resp. ' + p.responsavel : '', String(p.aguardando || '').trim() ? 'aguardando ' + p.aguardando.trim() : ''].filter(Boolean).join(', ');
         L.push(`• ${p.titulo}${meta ? ', ' + meta : ''}`);
-        parseSteps(p.proximoPasso).filter(x => !(x.kind === 'check' && x.done)).forEach(x => L.push(`    - ${plain(x.text)}`));
+        parseSteps(p.proximoPasso).forEach(x => L.push(`    - ${plain(x.text)}${x.kind === 'check' && x.done ? ' - ok' : ''}`));
+        L.push('');
       });
-      L.push('');
     });
     return L.join('\n').trim();
   }
