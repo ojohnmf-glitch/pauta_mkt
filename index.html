@@ -22,14 +22,14 @@
 /* Things — gallery-quiet: canvas Mist, cartões Paper com raio 18px e sombra dupla, texto Ink/Fog, um único azul (Signal) para cada momento interativo. Nav flutua sem fundo; seções separadas por espaço, não por linhas. */
 :root {
   color-scheme: light;
-  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f1f1f1; --canopy: #e2e4e2; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
+  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f1f1f1; --canopy: #ececec; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
   /* Paleta: verde-floresta (ação), verde-claro, lavanda e cinza-claro; --blue guarda o verde-floresta por compatibilidade */
   --blue: #06705a; --primary: #088365; --primary-deep: #066a51; --prog: #1f6ad9; --prog-tint: #eef4fd; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #e6f5ef; --selection: rgba(8,131,101,.2); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fafafa; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #defea1; --f-alpmi-soft: #f3ffdc; --f-alpmi-ink: #2e5a12;
   --f-alpme: #b9e5d2; --f-alpme-soft: #e4f5ee; --f-alpme-ink: #0a5a44;
   --f-innme: #b5b5ea; --f-innme-soft: #ebebf8; --f-innme-ink: #34347a;
-  --f-inov: #efe3b4; --f-inov-soft: #f8f3df; --f-inov-ink: #5a4a12;
+  --f-inov: #088365; --f-inov-soft: #dcefe7; --f-inov-ink: #ffffff;
   --f-fila: #e3e3e3; --f-fila-soft: #f5f5f5;
   --f-backlog: #cfdccf; --f-backlog-soft: #eef4ee;
   --ok-soft: #e3f5e7; --warn-soft: #fff3d1;
@@ -44,7 +44,7 @@
 }
 
 * { box-sizing: border-box; }
-body { background: var(--mist) linear-gradient(180deg, var(--canopy) 0, var(--canopy) 120px, var(--mist) 360px) no-repeat; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; accent-color: var(--blue); caret-color: var(--blue); }
+body { background: var(--paper) linear-gradient(180deg, var(--canopy) 0, var(--canopy) 120px, var(--paper) 360px) no-repeat; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; accent-color: var(--blue); caret-color: var(--blue); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--mist); }
 body.has-drawer { overflow-y: hidden; }
 ::selection { background: var(--selection); }
