@@ -223,6 +223,15 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .ferias-form { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .ferias-form label { font-size: 11px; color: var(--fog); display: block; margin-bottom: 2px; }
 .readonly .box .mini, .readonly .ferias-item .rm, .readonly .ferias-item .ph { display: none; }
+/* Vitórias da semana: caixas empilhadas, arquivadas por semana na aba Concluídos */
+.vit-item { padding: 6px 0; border-top: 1px solid var(--hairline); }
+.vit-item:first-child { border-top: 0; }
+.vit-item .nm { font-weight: 600; color: var(--ink); display: block; line-height: 1.3; }
+.vit-item .tx { color: var(--ash); display: block; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vit-arq { background: var(--paper); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 16px var(--card-pad) 8px; margin-bottom: 16px; }
+.vit-arq h3 { font-size: 15px; font-weight: 600; color: var(--ink); padding: 0 0 8px; line-height: 1.4; }
+.vit-arq .vit-item { padding: 10px 0; font-size: 15px; }
+.vit-arq .vit-item .tx { font-size: 15px; }
 @media (max-width: 900px) {
   .semana { grid-template-columns: 1fr; gap: 24px; }
   .side { position: static; order: 2; } /* celular e tablet: prioridades primeiro, metas e avisos no fim */
@@ -603,7 +612,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _tarefas: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, tarefasOpen: null, tarefasEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
+  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _tarefas: { texto: '' }, _ferias: { itens: [] }, _vitorias: { itens: [], arquivo: [] } }, ui: { vitForm: false, avisosOpen: null, avisosEdit: false, tarefasOpen: null, tarefasEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -620,6 +629,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
     return Math.ceil(((t - y0) / 86400000 + 1) / 7);
   }
+  function semanaCurta() { const t = today(); const dow = (t.getDay() + 6) % 7; const mon = new Date(t); mon.setDate(t.getDate() - dow); const fri = new Date(mon); fri.setDate(mon.getDate() + 4); return `Semana ${isoWeek(t)} · ${mon.getMonth() === fri.getMonth() ? String(mon.getDate()).padStart(2, '0') + ' a ' + fmtDay(fri) : fmtDay(mon) + ' a ' + fmtDay(fri)}`; }
   function weekLabel() {
     const t = today(); const dow = (t.getDay() + 6) % 7;
     const mon = new Date(t); mon.setDate(t.getDate() - dow);
@@ -903,7 +913,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       return filterActive() ? `<div class="empty">Nenhuma pauta corresponde à busca.</div>` : `<div class="empty">Nenhum projeto cadastrado ainda. Use “Novo projeto” para incluir a primeira pauta da área.</div>`;
     }
     return `<div class="semana">
-      <aside class="side" aria-label="Metas, avisos e férias">
+      <aside class="side" aria-label="Vitórias, metas, avisos e férias">
+      ${vitoriasHTML()}
       <section class="sc-wrap" aria-label="Metas do time"><h2 class="side-title">Metas do time</h2>
       ${scorecardHTML()}</section>
       ${tarefasHTML()}${avisosHTML()}${feriasHTML()}
@@ -922,6 +933,13 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       </div></div>`;
   }
 
+  function vitoriasHTML() {
+    const v = state.meta._vitorias || { itens: [], arquivo: [] }; const itens = v.itens || []; const form = state.ui.vitForm && state.canWrite !== false;
+    const list = itens.map(i => `<div class="vit-item"><span class="nm">${esc(i.nome)}</span><span class="tx">${esc(i.vitoria)}</span></div>`).join('');
+    const f = form ? `<div class="ferias-form"><div><label for="vtNome">Nome</label><input id="vtNome" data-meta="vform" placeholder="Quem"></div><div><label for="vtTexto">Vitória</label><textarea id="vtTexto" data-meta="vform" rows="3" placeholder="O que foi conquistado"></textarea></div><div class="acts"><button class="mini" type="button" id="vitSave">Salvar</button><button class="mini quiet" type="button" id="vitCancel">Cancelar</button></div></div>`
+      : `<div class="acts"><button class="mini" type="button" id="vitAdd">${I.plus}<span>Adicionar vitória</span></button>${itens.length ? '<button class="mini quiet" type="button" id="vitArquivar">Arquivar vitórias</button>' : ''}</div>`;
+    return `<section class="box vitorias open"><div class="box-head"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><span class="t">Vitórias da semana</span></div><div class="box-body">${list}${f}</div></section>`;
+  }
   function tarefasHTML() {
     const a = state.meta._tarefas || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.tarefasEdit && state.canWrite !== false;
     const open = edit || (state.ui.tarefasOpen === null ? !!txt : state.ui.tarefasOpen);
@@ -993,8 +1011,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 
   function viewConcluidos() {
     const done = all().filter(p => p.etapa === 'concluido').sort((a, b) => (b.concluidoEm || '').localeCompare(a.concluidoEm || ''));
-    if (!done.length) return `<div class="empty">Nenhum projeto concluído ainda.</div>`;
-    return `<section class="block">${head('Histórico', `${done.length} projetos concluídos.`)}${groupByFrente(done, true, false, 'hist')}</section>`;
+    const arq = ((state.meta._vitorias || {}).arquivo || []).slice().sort((a, b) => String(b.arquivadoEm || '').localeCompare(String(a.arquivadoEm || '')));
+    const vit = arq.length ? `<section class="block">${head('Vitórias arquivadas', `${arq.reduce((n, g) => n + (g.itens || []).length, 0)} vitórias em ${arq.length} semana${arq.length > 1 ? 's' : ''}.`)}${arq.map(g => `<div class="vit-arq"><h3>${esc(g.semana)}</h3>${(g.itens || []).map(i => `<div class="vit-item"><span class="nm">${esc(i.nome)}</span><span class="tx">${esc(i.vitoria)}</span></div>`).join('')}</div>`).join('')}</section>` : '';
+    if (!done.length && !vit) return `<div class="empty">Nenhum projeto concluído ainda.</div>`;
+    return `${done.length ? `<section class="block">${head('Histórico', `${done.length} projetos concluídos.`)}${groupByFrente(done, true, false, 'hist')}</section>` : ''}${vit}`;
   }
 
   // ---------- Notas: reuniões e histórico de pautas enviadas (docs "_n_…") ----------
@@ -1207,6 +1227,21 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   // Avisos e férias
   document.addEventListener('click', e => {
     const fb = e.target.closest('[data-fmt]'); if (fb) { const ta = document.getElementById(fb.closest('.fmt-bar').dataset.for); if (ta && !ta.disabled) applyFmt(ta, fb.dataset.fmt); return; }
+    if (e.target.closest('#vitAdd')) { if (state.canWrite === false) return; state.ui.vitForm = true; render(); const n = $('#vtNome'); if (n) n.focus(); return; }
+    if (e.target.closest('#vitCancel')) { state.ui.vitForm = false; render(); return; }
+    if (e.target.closest('#vitSave')) {
+      if (state.canWrite === false) return;
+      const nome = $('#vtNome').value.trim(), vitoria = $('#vtTexto').value.trim();
+      if (!nome || !vitoria) { (!nome ? $('#vtNome') : $('#vtTexto')).focus(); return; }
+      const v = state.meta._vitorias; v.itens = (v.itens || []).concat([{ id: 'v' + Date.now().toString(36), nome, vitoria, criadoEm: new Date().toISOString() }]);
+      state.ui.vitForm = false; persistMeta('_vitorias', true); render(); return;
+    }
+    if (e.target.closest('#vitArquivar')) {
+      if (state.canWrite === false) return;
+      const v = state.meta._vitorias; if (!(v.itens || []).length) return;
+      v.arquivo = (v.arquivo || []).concat([{ id: 'a' + Date.now().toString(36), semana: semanaCurta(), arquivadoEm: new Date().toISOString(), itens: v.itens }]);
+      v.itens = []; persistMeta('_vitorias', true); render(); showToast('Vitórias arquivadas em Concluídos.'); return;
+    }
     if (e.target.closest('#tarefasToggle')) { const txt = String(state.meta._tarefas.texto || '').trim(); const cur = state.ui.tarefasOpen === null ? !!txt : state.ui.tarefasOpen; state.ui.tarefasOpen = !cur; if (!state.ui.tarefasOpen) state.ui.tarefasEdit = false; render(); return; }
     if (e.target.closest('#tarefasEdit')) { if (state.canWrite === false) return; state.ui.tarefasEdit = true; state.ui.tarefasOpen = true; render(); const t = $('#tarefasText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
     if (e.target.closest('#tarefasDone')) { state.ui.tarefasEdit = false; if (!String(state.meta._tarefas.texto || '').trim()) state.ui.tarefasOpen = null; persistMeta('_tarefas', true); render(); return; }
@@ -1558,7 +1593,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
     state.db.collection('projetos').onSnapshot(snap => {
       const next = {}, nextM = {}, nextN = {};
-      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if ((d.id === '_avisos' || d.id === '_tarefas') && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
+      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_vitorias') { if (!Array.isArray(m.itens)) m.itens = []; if (!Array.isArray(m.arquivo)) m.arquivo = []; } if ((d.id === '_avisos' || d.id === '_tarefas') && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
       // Ajustes em metas já gravadas (uma vez, só no que ainda está no formato antigo)
       Object.values(nextM).forEach(m => {
         let ch = false;
