@@ -561,7 +561,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const DEFAULT_METAS = [
     ['empresa', 'Margem da carne (%)', 'Friboi', 'numero', '%'],
     ['empresa', 'Margem da carne (R$)', 'Friboi', 'numero', 'R$'],
-    ['empresa', 'Volume de vendas ME e MI', 'ALP', 'numero', ''],
+    ['empresa', 'Volume ALP ME e MI', '', 'numero', ''],
     ['valeretto', 'Volume PVA', 'MI', 'numero', ''],
     ['luis', 'Volume de vendas resfriado', 'IN ME', 'numero', ''],
     ['john', 'Volume inovação', 'ALP + INN ME', 'numero', ''],
@@ -1542,6 +1542,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         if (m.nome === 'Volume de vendas resfriado' && m.escopo === 'ME') { m.escopo = 'IN ME'; ch = true; }
         if (m.nome === 'Volume PVA' && m.grupo === 'empresa') { m.grupo = 'valeretto'; ch = true; }
         if (m.nome === 'Volume de vendas resfriado' && m.grupo === 'empresa') { m.grupo = 'luis'; ch = true; }
+        if (m.nome === 'Volume de vendas ME e MI') { m.nome = 'Volume ALP ME e MI'; m.escopo = ''; ch = true; }
         if (ch && state.canWrite !== false && state.db) { const body = Object.assign({}, m); delete body.id; state.db.doc('projetos/' + m.id).set(body).catch(() => {}); }
       });
       state.projects = next; state.metas = nextM; state.notas = nextN; state.loaded = true;
