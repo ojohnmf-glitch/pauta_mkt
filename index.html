@@ -322,6 +322,11 @@ section.block { margin-bottom: var(--section); }
 
 /* Linhas de pauta */
 .list { display: flex; flex-direction: column; }
+/* Linhas zebradas: cada pauta alterna entre a cor do cartão e um tom mais claro dela */
+.list > .row { margin-inline: calc(-1 * var(--card-pad)); padding-inline: var(--card-pad); width: calc(100% + 2 * var(--card-pad)); }
+.list > .row:nth-child(even) { background: var(--stripe); }
+.frente-group, .panel { --stripe: color-mix(in srgb, var(--fcs, var(--paper)) 50%, var(--paper)); }
+.frente-group.gray, .panel.gray, .month { --stripe: var(--mist); }
 /* Pausada fora de "Estacionados": esmaecida, para não parecer prioridade */
 .row.paused { opacity: .55; } .row.paused:hover, .row.paused:focus-visible { opacity: .9; }
 section.block[data-sec="parked"] .row.paused { opacity: 1; }
