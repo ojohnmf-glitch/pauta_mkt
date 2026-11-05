@@ -921,9 +921,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const a = state.meta._avisos || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.avisosEdit && state.canWrite !== false;
     const open = edit || (state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen);
     const body = edit
-      ? `<textarea data-meta="avisos" id="avisosText" aria-label="Avisos importantes" placeholder="Escreva os avisos da semana">${esc(a.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="avisosDone">Concluir</button></div>`
+      ? `<textarea data-meta="avisos" id="avisosText" aria-label="Avisos e lembretes" placeholder="Avisos e lembretes da semana">${esc(a.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="avisosDone">Concluir</button></div>`
       : `${txt ? `<div class="aviso-text">${esc(txt)}</div>` : '<div class="aviso-text" style="color:var(--silver)">Nenhum aviso.</div>'}${a.atualizadoEm ? `<div class="stamp">Atualizado ${new Date(a.atualizadoEm).toLocaleDateString('pt-BR')}</div>` : ''}<div class="acts"><button class="mini" type="button" id="avisosEdit">${txt ? 'Editar' : 'Escrever aviso'}</button></div>`;
-    return `<section class="box avisos ${open ? 'open' : ''}"><button class="box-head" type="button" id="avisosToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="t">Avisos importantes</span>${txt && !open ? '<span class="mark" aria-label="há avisos"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
+    return `<section class="box avisos ${open ? 'open' : ''}"><button class="box-head" type="button" id="avisosToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="t">Avisos e lembretes</span>${txt && !open ? '<span class="mark" aria-label="há avisos"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
   }
   const cssUrl = u => String(u || '').replace(/[^A-Za-z0-9:;,/+=._-]/g, ''); // só data: URLs geradas aqui
   function feriasHTML() {
@@ -1392,7 +1392,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     let h = `<div style="${F}color:${C.ink}"><h1 style="${F}font-size:16pt;color:${C.head};margin:0 0 2px">Weekly Review, ${esc(weekLabel())}</h1>`;
     h += `<p style="${F}font-size:10pt;color:${C.meta};margin:0 0 12px">Painel Semanal de Pautas</p>`;
     const aviso = String(state.meta._avisos.texto || '').trim();
-    if (aviso) h += h2('Avisos importantes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
+    if (aviso) h += h2('Avisos e lembretes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; h += h2(g.nome) + '<ul style="margin:0 0 0 18px;padding:0">'; ms.forEach(m => { h += li(`<b>${esc(m.nome)}</b><span style="color:${C.meta}">${m.escopo ? ' (' + esc(m.escopo) + ')' : ''}, ${esc(metaStatusTxt(m))}${m.dono ? ', ' + esc(m.dono) : ''}</span>`); }); h += '</ul>'; });
     frentes.forEach(({ f, items }) => {
       h += h2(f.nome) + '<ul style="margin:0 0 0 18px;padding:0">';
@@ -1414,7 +1414,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const { frentes, atencao, done, fila, backlog } = resumoDados();
     const L = [`WEEKLY REVIEW, ${weekLabel()}`, ''];
     const aviso = String(state.meta._avisos.texto || '').trim();
-    if (aviso) { L.push('AVISOS IMPORTANTES'); L.push(aviso); L.push(''); }
+    if (aviso) { L.push('AVISOS E LEMBRETES'); L.push(aviso); L.push(''); }
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; L.push(g.nome.toUpperCase()); ms.forEach(m => L.push(`• ${m.nome}${m.escopo ? ' (' + m.escopo + ')' : ''}, ${metaStatusTxt(m)}${m.dono ? ', ' + m.dono : ''}`)); L.push(''); });
     frentes.forEach(({ f, items }) => {
       L.push(f.nome.toUpperCase());
