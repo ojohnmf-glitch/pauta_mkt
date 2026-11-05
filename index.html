@@ -22,7 +22,7 @@
 /* Things — gallery-quiet: canvas Mist, cartões Paper com raio 18px e sombra dupla, texto Ink/Fog, um único azul (Signal) para cada momento interativo. Nav flutua sem fundo; seções separadas por espaço, não por linhas. */
 :root {
   color-scheme: light;
-  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f1f1f1; --canopy: #f4f4f4; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
+  --ink: #303336; --paper: #ffffff; --mist: #f1f1f1; --canopy: #f4f4f4; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
   /* Paleta: verde-floresta (ação), verde-claro, lavanda e cinza-claro; --blue guarda o verde-floresta por compatibilidade */
   --blue: #06705a; --primary: #088365; --primary-deep: #066a51; --prog: #1f6ad9; --prog-tint: #eef4fd; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #e6f5ef; --selection: rgba(8,131,101,.2); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fafafa; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
@@ -97,7 +97,7 @@ h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: normal; line-height:
 .tab .ic { display: none; }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); }
-.tab sup { font-size: 11px; font-weight: 500; color: var(--fog); line-height: 1; vertical-align: super; }
+.tab sup { font-size: 11px; font-weight: 400; color: var(--fog); line-height: 1; vertical-align: super; }
 .tab sup:empty { display: none; }
 .spacer { flex: 1; }
 
@@ -253,7 +253,7 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .sc-val input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
 .sc-val input:disabled { background: var(--mist); color: var(--fog); }
 .sc-field { display: inline-flex; align-items: center; gap: 6px; }
-.sc-lbl { font-size: 12px; font-weight: 500; color: var(--fog); min-width: 32px; }
+.sc-lbl { font-size: 12px; font-weight: 400; color: var(--fog); min-width: 32px; }
 .sc-unit { font-size: 12px; color: var(--fog); white-space: nowrap; }
 /* Atingimento marcado à mão (a conta não é um % simples): zerada em vermelho, 100% ou mais em verde */
 .sc-sel { position: relative; display: inline-flex; color: var(--ash); }
@@ -455,7 +455,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   .tabbar.stuck { background: var(--paper); box-shadow: none; }
   .tabbar-inner { padding: 8px; }
   .tabs { display: flex; width: 100%; border: 0; background: transparent; padding: 0; gap: 0; }
-  .tab { flex: 1 1 0; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; font-size: 11px; font-weight: 500; min-width: 0; }
+  .tab { flex: 1 1 0; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; font-size: 11px; font-weight: 600; min-width: 0; }
   .tab .ic { display: block; }
   .tab sup { display: none; }
   .tab[aria-selected="true"] { color: var(--blue); }
@@ -962,16 +962,16 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
 
   function viewPrazos() {
-    const withDue = active().filter(p => p.prazo).sort((a, b) => a.prazo.localeCompare(b.prazo));
-    const noDue = active().filter(p => !p.prazo);
-    const late = withDue.filter(isLate);
+    const late = active().filter(isLate); // entrega ou prazo final vencido, como no semáforo
+    const withDue = active().filter(p => p.prazo && !isLate(p)).sort((a, b) => a.prazo.localeCompare(b.prazo));
+    const noDue = active().filter(p => !p.prazo && !isLate(p));
     const months = {};
-    withDue.filter(p => !isLate(p)).forEach(p => { const d = parseISO(p.prazo); const k = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); (months[k] = months[k] || []).push(p); });
+    withDue.forEach(p => { const d = parseISO(p.prazo); const k = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); (months[k] = months[k] || []).push(p); });
     let html = '';
     if (late.length) html += `<section class="block">${head('Vencidos', '', 'crit')}<div class="month"><div class="list">${late.map(p => rowHTML(p)).join('')}</div></div></section>`;
-    if (withDue.length) html += `<section class="block">${head('Próximos prazos', '')}${Object.keys(months).map(k => `<div class="month"><h3>${k}</h3><div class="list">${months[k].map(p => rowHTML(p)).join('')}</div></div>`).join('')}</section>`;
-    else html += `<div class="empty">Nenhum projeto com prazo definido. Abra um projeto e preencha o campo Prazo.</div>`;
-    if (noDue.length) html += `<section class="block">${head('Sem prazo definido', `${noDue.length} projetos ativos ainda sem data.`)}${groupByFrente(noDue, true, false, 'semprazo')}</section>`;
+    if (withDue.length) html += `<section class="block">${head('Próximos prazos finais', '')}${Object.keys(months).map(k => `<div class="month"><h3>${k}</h3><div class="list">${months[k].map(p => rowHTML(p)).join('')}</div></div>`).join('')}</section>`;
+    else html += `<div class="empty">Nenhum projeto com prazo final definido. Abra um projeto e preencha o campo Prazo final.</div>`;
+    if (noDue.length) html += `<section class="block">${head('Sem prazo final', `${noDue.length} projetos ativos ainda sem prazo final.`)}${groupByFrente(noDue, true, false, 'semprazo')}</section>`;
     return html;
   }
 
@@ -1053,14 +1053,14 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const f = fr(p.frente);
     const faltas = agoraFaltas(p);
     const regra = !faltas.length ? '' : p.horizonte === 'agora' ? `<div class="rule warn" id="agoraRegra">Incompleto para Agora. Falta: ${esc(faltas.join(', '))}.</div>` : `<div class="rule" id="agoraRegra">Para entrar em Agora: próximo passo, responsável e data da próxima entrega.</div>`;
-    const seg = (name, opts, cur, cls, label) => `<div class="seg" role="group" aria-label="${label}" data-seg="${name}">${Object.keys(opts).map(k => `<button type="button" class="${cls ? k : ''}" data-val="${k}" aria-pressed="${cur === k}">${opts[k]}</button>`).join('')}</div>`;
+    const seg = (name, opts, cur, label) => `<div class="seg" role="group" aria-label="${label}" data-seg="${name}">${Object.keys(opts).map(k => `<button type="button" data-val="${k}" aria-pressed="${cur === k}">${opts[k]}</button>`).join('')}</div>`;
     root.innerHTML = `<button class="drawer-bg" id="drawerBg" type="button" aria-label="Fechar" tabindex="-1"></button>
       <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
         <div class="drawer-head" style="--fc:${f.cor};--fct:${f.ink}"><span class="fchip">${f.nome}</span><span class="spacer"></span><button class="btn quiet" type="button" id="drawerClose">${I.x}<span>Fechar</span></button></div>
         <div class="drawer-body">
           <h2 class="sr-only" id="drawerTitle">${p.titulo ? 'Editar ' + esc(p.titulo) : 'Novo projeto'}</h2>
           <div class="field"><input class="big" id="f-titulo" data-f="titulo" value="${esc(p.titulo)}" placeholder="Nome do projeto" aria-label="Nome do projeto"></div>
-          <div class="field"><label>Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, false, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
+          <div class="field"><label>Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
           <div class="field"><label id="lbl-saude">Saúde (calculada)</label><div class="saude-line" id="saudeLine" aria-labelledby="lbl-saude">${saudeLineHTML(p)}</div>
             <label class="check-line"><input type="checkbox" id="f-acomp" data-f="acompanhar" ${p.acompanhar ? 'checked' : ''}><span>Acompanhar dias na etapa${p.acompanhar && p.etapaDesde ? `, contando desde ${new Date(p.etapaDesde).toLocaleDateString('pt-BR')}` : ' (conta a partir de hoje; alerta após ' + DIAS_PARADO + ' dias parado)'}</span></label></div>
           <div class="field"><label for="f-next">Próximo passo</label><div class="fmt-bar" role="toolbar" aria-label="Formatação" data-for="f-next"><button type="button" data-fmt="b" aria-label="Negrito" title="Negrito"><b>B</b></button><button type="button" data-fmt="i" aria-label="Itálico" title="Itálico"><i>I</i></button><button type="button" data-fmt="u" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button><span class="sep" aria-hidden="true"></span><button type="button" data-fmt="ul" aria-label="Tópico" title="Tópico"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></button><button type="button" data-fmt="check" aria-label="Checklist" title="Checklist"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="6" height="6" rx="1.2"/><path d="M4.5 8l1.5 1.5L8.5 6.5M12 8h9M12 16h9"/><rect x="3" y="13" width="6" height="6" rx="1.2"/></svg></button></div><textarea id="f-next" class="next" data-f="proximoPasso" rows="${Math.min(10, Math.max(3, String(p.proximoPasso || '').split('\n').length + 1))}">${esc(p.proximoPasso)}</textarea></div>
