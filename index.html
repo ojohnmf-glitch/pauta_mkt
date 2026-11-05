@@ -24,7 +24,7 @@
   color-scheme: light;
   --ink: #303336; --paper: #ffffff; --mist: #f1f1f1; --canopy: #f4f4f4; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
   /* Paleta: verde-floresta (ação), verde-claro, lavanda e cinza-claro; --blue guarda o verde-floresta por compatibilidade */
-  --blue: #06705a; --primary: #088365; --primary-deep: #066a51; --prog: #1f6ad9; --prog-tint: #eef4fd; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #e6f5ef; --selection: rgba(8,131,101,.2); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fafafa; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
+  --blue: #06705a; --primary: #088365; --primary-deep: #066a51; --prog: #1f6ad9; --prog-tint: #eef4fd; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #e6f5ef; --selection: rgba(8,131,101,.2); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fafafa; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --tarefas-bg: #f4ecfa; --tarefas-ink: #5b3a82; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
   --f-alpmi: #defea1; --f-alpmi-soft: #f3ffdc; --f-alpmi-ink: #2e5a12;
   --f-alpme: #b9e5d2; --f-alpme-soft: #e4f5ee; --f-alpme-ink: #0a5a44;
@@ -183,6 +183,13 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .box.avisos .box-head .ic { color: var(--aviso-ink); }
 .box.avisos .aviso-text { color: var(--ink); }
 .box.avisos .stamp { color: var(--aviso-ink); opacity: .8; }
+.box.tarefas { background: var(--tarefas-bg); }
+.box.tarefas .box-head, .box.tarefas .box-body { color: var(--tarefas-ink); }
+.box.tarefas .box-head .chev { color: var(--tarefas-ink); opacity: .6; }
+.box.tarefas .box-head .ic { color: var(--tarefas-ink); }
+.box.tarefas .stamp { color: var(--tarefas-ink); opacity: .8; }
+.box.tarefas .steps { font-size: 12px; color: var(--ink); line-height: 1.45; }
+.box.tarefas .fmt-bar { margin-bottom: 4px; } .box.tarefas .fmt-bar button { width: 28px; height: 26px; font-size: 12px; }
 .box textarea, .box input { width: 100%; border: 1px solid var(--field-edge); border-radius: 6px; padding: 8px; font-size: 12px; background: var(--paper); color: var(--ink); line-height: 1.4; }
 .box textarea:focus, .box input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
 .box textarea { min-height: 96px; resize: vertical; }
@@ -596,7 +603,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
+  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _tarefas: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, tarefasOpen: null, tarefasEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -899,7 +906,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       <aside class="side" aria-label="Metas, avisos e férias">
       <section class="sc-wrap" aria-label="Metas do time"><h2 class="side-title">Metas do time</h2>
       ${scorecardHTML()}</section>
-      ${avisosHTML()}${feriasHTML()}
+      ${tarefasHTML()}${avisosHTML()}${feriasHTML()}
       </aside>
       <div class="semana-main">
       <section class="block" data-sec="agora">${head('Prioridades da semana')}
@@ -915,6 +922,15 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       </div></div>`;
   }
 
+  function tarefasHTML() {
+    const a = state.meta._tarefas || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.tarefasEdit && state.canWrite !== false;
+    const open = edit || (state.ui.tarefasOpen === null ? !!txt : state.ui.tarefasOpen);
+    const bar = `<div class="fmt-bar" role="toolbar" aria-label="Formatação" data-for="tarefasText"><button type="button" data-fmt="b" aria-label="Negrito" title="Negrito"><b>B</b></button><button type="button" data-fmt="i" aria-label="Itálico" title="Itálico"><i>I</i></button><button type="button" data-fmt="u" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button><span class="sep" aria-hidden="true"></span><button type="button" data-fmt="ul" aria-label="Tópico" title="Tópico"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></button></div>`;
+    const body = edit
+      ? `${bar}<textarea data-meta="tarefas" id="tarefasText" aria-label="Tarefas do Check de Metas" placeholder="Tarefas combinadas no check de metas">${esc(a.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="tarefasDone">Concluir</button></div>`
+      : `${txt ? stepsHTML(txt) : '<div class="aviso-text" style="color:var(--silver)">Nenhuma tarefa.</div>'}${a.atualizadoEm ? `<div class="stamp">Atualizado ${new Date(a.atualizadoEm).toLocaleDateString('pt-BR')}</div>` : ''}<div class="acts"><button class="mini" type="button" id="tarefasEdit">${txt ? 'Editar' : 'Escrever tarefas'}</button></div>`;
+    return `<section class="box tarefas ${open ? 'open' : ''}"><button class="box-head" type="button" id="tarefasToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg><span class="t">Tarefas do Check de Metas</span>${txt && !open ? '<span class="mark" aria-label="há tarefas"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
+  }
   function avisosHTML() {
     const a = state.meta._avisos || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.avisosEdit && state.canWrite !== false;
     const open = edit || (state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen);
@@ -1143,7 +1159,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const bc = e.target.closest('#btnConcluir'); if (bc) { if (bc.dataset.arm) { p.etapa = 'concluido'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = p.etapaDesde; persist(p, true); renderDrawer(p, false); } else { bc.dataset.arm = '1'; bc.querySelector('span').textContent = 'Confirmar: projeto terminou'; } return; }
     if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
     const ex = e.target.closest('#btnExcluir'); if (ex) { if (ex.dataset.arm) { remove(p); } else { ex.dataset.arm = '1'; ex.querySelector('span').textContent = 'Confirmar exclusão'; } return; }
-    const fb = e.target.closest('[data-fmt]'); if (fb) { const ta = document.getElementById(fb.closest('.fmt-bar').dataset.for); if (ta && !ta.disabled) applyFmt(ta, fb.dataset.fmt); return; }
     if (e.target.closest('#notasToggle')) { $('#notasField').classList.remove('collapsed'); $('#f-notas').focus(); return; }
     if (e.target.closest('#moreToggle')) { state.ui.moreOpen = true; $('#moreField').classList.remove('collapsed'); $('#f-etapa').focus(); return; }
   });
@@ -1191,6 +1206,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   document.addEventListener('focusout', e => { if (e.target && e.target.dataset && e.target.dataset.mtxt != null) setTimeout(render, 0); });
   // Avisos e férias
   document.addEventListener('click', e => {
+    const fb = e.target.closest('[data-fmt]'); if (fb) { const ta = document.getElementById(fb.closest('.fmt-bar').dataset.for); if (ta && !ta.disabled) applyFmt(ta, fb.dataset.fmt); return; }
+    if (e.target.closest('#tarefasToggle')) { const txt = String(state.meta._tarefas.texto || '').trim(); const cur = state.ui.tarefasOpen === null ? !!txt : state.ui.tarefasOpen; state.ui.tarefasOpen = !cur; if (!state.ui.tarefasOpen) state.ui.tarefasEdit = false; render(); return; }
+    if (e.target.closest('#tarefasEdit')) { if (state.canWrite === false) return; state.ui.tarefasEdit = true; state.ui.tarefasOpen = true; render(); const t = $('#tarefasText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
+    if (e.target.closest('#tarefasDone')) { state.ui.tarefasEdit = false; if (!String(state.meta._tarefas.texto || '').trim()) state.ui.tarefasOpen = null; persistMeta('_tarefas', true); render(); return; }
     if (e.target.closest('#avisosToggle')) { const txt = String(state.meta._avisos.texto || '').trim(); const cur = state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen; state.ui.avisosOpen = !cur; if (!state.ui.avisosOpen) state.ui.avisosEdit = false; render(); return; }
     if (e.target.closest('#avisosEdit')) { if (state.canWrite === false) return; state.ui.avisosEdit = true; state.ui.avisosOpen = true; render(); const t = $('#avisosText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
     if (e.target.closest('#avisosDone')) { state.ui.avisosEdit = false; if (!String(state.meta._avisos.texto || '').trim()) state.ui.avisosOpen = null; persistMeta('_avisos', true); render(); return; }
@@ -1210,6 +1229,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   document.addEventListener('input', e => {
     if (e.target.id === 'q') { state.q = e.target.value; render(); return; }
     if (e.target.dataset.meta === 'avisos') { if (state.canWrite === false) return; state.meta._avisos.texto = e.target.value; persistMeta('_avisos', false); return; }
+    if (e.target.dataset.meta === 'tarefas') { if (state.canWrite === false) return; state.meta._tarefas.texto = e.target.value; persistMeta('_tarefas', false); return; }
     const p = state.selected && state.projects[state.selected]; if (!p || state.canWrite === false) return;
     const f = e.target.dataset.f;
     if (f) {
@@ -1263,7 +1283,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
   });
   document.addEventListener('focusout', e => { if (e.target && e.target.id === 'q' && !state.q) { state.ui.searchOpen = false; setTimeout(render, 0); } });
-  document.addEventListener('focusout', e => { if (e.target && e.target.dataset && e.target.dataset.meta === 'avisos') setTimeout(() => { if (!document.activeElement || document.activeElement.dataset.meta !== 'avisos') render(); }, 0); });
+  document.addEventListener('focusout', e => { const k = e.target && e.target.dataset && e.target.dataset.meta; if (k === 'avisos' || k === 'tarefas') setTimeout(() => { const ae = document.activeElement; if (!ae || (ae.dataset.meta !== k && !ae.closest('.fmt-bar'))) render(); }, 0); });
 
   // ---------- Reordenar: arrastar pela alça (mouse e toque) ----------
   const drag = { src: null, ghost: null, list: null, origList: null, panel: null, sec: null, overSec: null, startY: 0, startX: 0, offY: 0, active: false, suppressClick: false, pointerId: null };
@@ -1396,6 +1416,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     h += `<p style="${F}font-size:10pt;color:${C.meta};margin:0 0 12px">Painel Semanal de Pautas</p>`;
     const aviso = String(state.meta._avisos.texto || '').trim();
     if (aviso) h += h2('Avisos e lembretes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
+    const tarefas = parseSteps(state.meta._tarefas.texto);
+    if (tarefas.length) h += h2('Tarefas do Check de Metas') + `<ul style="margin:0 0 0 18px;padding:0">${tarefas.map(x => `<li style="${F}font-size:11pt;margin:0 0 4px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${inline(x.text)}</li>`).join('')}</ul>`;
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; h += h2(g.nome) + '<ul style="margin:0 0 0 18px;padding:0">'; ms.forEach(m => { h += li(`<b>${esc(m.nome)}</b><span style="color:${C.meta}">${m.escopo ? ' (' + esc(m.escopo) + ')' : ''}, ${esc(metaStatusTxt(m))}${m.dono ? ', ' + esc(m.dono) : ''}</span>`); }); h += '</ul>'; });
     frentes.forEach(({ f, items }) => {
       h += h2(f.nome) + '<ul style="margin:0 0 0 18px;padding:0">';
@@ -1418,6 +1440,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const L = [`WEEKLY REVIEW, ${weekLabel()}`, ''];
     const aviso = String(state.meta._avisos.texto || '').trim();
     if (aviso) { L.push('AVISOS E LEMBRETES'); L.push(aviso); L.push(''); }
+    const tarefas = parseSteps(state.meta._tarefas.texto);
+    if (tarefas.length) { L.push('TAREFAS DO CHECK DE METAS'); tarefas.forEach(x => L.push(`• ${plain(x.text)}`)); L.push(''); }
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; L.push(g.nome.toUpperCase()); ms.forEach(m => L.push(`• ${m.nome}${m.escopo ? ' (' + m.escopo + ')' : ''}, ${metaStatusTxt(m)}${m.dono ? ', ' + m.dono : ''}`)); L.push(''); });
     frentes.forEach(({ f, items }) => {
       L.push(f.nome.toUpperCase());
@@ -1534,7 +1558,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
     state.db.collection('projetos').onSnapshot(snap => {
       const next = {}, nextM = {}, nextN = {};
-      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_avisos' && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
+      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if ((d.id === '_avisos' || d.id === '_tarefas') && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
       // Ajustes em metas já gravadas (uma vez, só no que ainda está no formato antigo)
       Object.values(nextM).forEach(m => {
         let ch = false;
