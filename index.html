@@ -22,7 +22,7 @@
 /* Things — gallery-quiet: canvas Mist, cartões Paper com raio 18px e sombra dupla, texto Ink/Fog, um único azul (Signal) para cada momento interativo. Nav flutua sem fundo; seções separadas por espaço, não por linhas. */
 :root {
   color-scheme: light;
-  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f1f1f1; --canopy: #ececec; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
+  --ink: #303336; --ink-deep: #1a1c20; --paper: #ffffff; --mist: #f1f1f1; --canopy: #f4f4f4; --fog: #5f666e; --ash: #55606e; --smoke: #44474b; --silver: #9299a4; --hairline: #dddfdd; --field-edge: #7d8591;
   /* Paleta: verde-floresta (ação), verde-claro, lavanda e cinza-claro; --blue guarda o verde-floresta por compatibilidade */
   --blue: #06705a; --primary: #088365; --primary-deep: #066a51; --prog: #1f6ad9; --prog-tint: #eef4fd; --on-accent: #ffffff; --on-accent-2: rgba(255,255,255,.8); --tint-line: rgba(20,30,40,.09); --glass-70: rgba(255,255,255,.7); --blue-tint: #e6f5ef; --selection: rgba(8,131,101,.2); --hover-wash: rgba(48,51,54,.04); --paper-hover: #fafafa; --danger-soft: #fff1f1; --aviso-bg: #fff3e3; --aviso-ink: #7a4a00; --glass: rgba(255,255,255,.5);
   /* Frentes: faixa (cabeçalho) e tinta (fundo do cartão) */
@@ -380,7 +380,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .row .marco { color: var(--fog); }
 .rule { font-size: 13px; color: var(--fog); line-height: 1.4; margin-top: 2px; }
 .rule.warn { color: var(--warn-text); font-weight: 600; }
-.kpi-strip .wip b { margin-left: 3px; margin-right: 0; }
 #toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); background: var(--ink); color: var(--on-accent); padding: 10px 16px; border-radius: var(--r-pill); font-size: 14px; line-height: 1.4; box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 40; max-width: calc(100vw - 32px); text-align: center; }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
 .chip.fr { display: inline-flex; align-items: center; gap: 8px; }
@@ -542,7 +541,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const NOTA_TIPOS = { reuniao: 'Reunião', pauta: 'Pauta enviada', outro: 'Nota' };
   const DIAS_PARADO = 7; // dias no mesmo status, ou aguardando alguém, antes de virar atenção / crítico
   const DIAS_MARCO = 3;  // dias de folga antes do marco (atenção) e de atraso depois dele (crítico)
-  const WIP_AGORA = 4; // máximo de pautas em "Agora" por responsável: limite visível no resumo, fica vermelho quando estoura
+  const WIP_AGORA = 4; // máximo de pautas em "Agora" por responsável: acima disso, aviso ao mover para Agora
   // Scorecard: grupos de metas (área, corporativas e uma por frente). Metas vivem na mesma coleção, ids "_m_…"
   const METAS_GRUPOS = [
     { id: 'empresa', nome: 'Metas empresa', cor: 'var(--ink)', soft: 'var(--paper)' },
@@ -881,8 +880,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const nLate = act.filter(isLate).length;
     const nRisk = act.filter(p => saudeDe(p) !== 'ok').length;
     const pctAgora = agora.length ? Math.round(agora.filter(agoraCompleto).length / agora.length * 100) : null;
-    const wip = {}; agora.forEach(p => { const r = String(p.responsavel || '').trim() || 'Sem dono'; wip[r] = (wip[r] || 0) + 1; });
-    const wipHTML = Object.keys(wip).sort((a, b) => wip[b] - wip[a] || a.localeCompare(b, 'pt-BR')).map(r => `<span class="wip ${wip[r] > WIP_AGORA ? 'crit' : ''}" title="${esc(r)}: ${wip[r]} em Agora, limite ${WIP_AGORA}">${esc(r)}<b class="num">${wip[r]}/${WIP_AGORA}</b></span>`).join('');
     if (!act.length && !done.length) {
       return filterActive() ? `<div class="empty">Nenhuma pauta corresponde à busca.</div>` : `<div class="empty">Nenhum projeto cadastrado ainda. Use “Novo projeto” para incluir a primeira pauta da área.</div>`;
     }
@@ -898,7 +895,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <span class="${nRisk ? 'warn' : ''}"><b class="num">${nRisk}</b>atenção ou crítico</span>
         <span class="${nLate ? 'crit' : ''}"><b class="num">${nLate}</b>atrasados</span>
       </div>
-      ${wipHTML ? `<div class="kpi-strip" role="group" aria-label="Pautas em Agora por responsável, limite ${WIP_AGORA}">${wipHTML}</div>` : ''}
       <section class="block" data-sec="agora">${head('Prioridades da semana')}
         ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada em “Agora”. Entra aqui a pauta com próximo passo, responsável e data do próximo marco: abra um projeto e marque o horizonte, ou arraste uma pauta para cá.</div>'}</section>
       <section class="block" data-sec="parked">${head('Estacionados')}
