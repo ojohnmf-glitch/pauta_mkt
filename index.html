@@ -541,7 +541,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const NOTA_TIPOS = { reuniao: 'Reunião', pauta: 'Pauta enviada', outro: 'Nota' };
   const DIAS_PARADO = 7; // dias no mesmo status, ou aguardando alguém, antes de virar atenção / crítico
   const DIAS_MARCO = 3;  // dias de folga antes do marco (atenção) e de atraso depois dele (crítico)
-  const EU = 'John';     // nome usado no contador "aguardando John" do resumo
   const WIP_AGORA = 4; // máximo de pautas em "Agora" por responsável: limite visível no resumo, fica vermelho quando estoura
   // Scorecard: grupos de metas (área, corporativas e uma por frente). Metas vivem na mesma coleção, ids "_m_…"
   const METAS_GRUPOS = [
@@ -880,7 +879,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const done = all().filter(doneRecently);
     const nLate = act.filter(isLate).length;
     const nRisk = act.filter(p => saudeDe(p) !== 'ok').length;
-    const nEu = act.filter(p => fold(p.aguardando).trim() === fold(EU)).length;
     const pctAgora = agora.length ? Math.round(agora.filter(agoraCompleto).length / agora.length * 100) : null;
     const wip = {}; agora.forEach(p => { const r = String(p.responsavel || '').trim() || 'Sem dono'; wip[r] = (wip[r] || 0) + 1; });
     const wipHTML = Object.keys(wip).sort((a, b) => wip[b] - wip[a] || a.localeCompare(b, 'pt-BR')).map(r => `<span class="wip ${wip[r] > WIP_AGORA ? 'crit' : ''}" title="${esc(r)}: ${wip[r]} em Agora, limite ${WIP_AGORA}">${esc(r)}<b class="num">${wip[r]}/${WIP_AGORA}</b></span>`).join('');
@@ -898,7 +896,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <span class="${pctAgora == null ? '' : pctAgora < 100 ? 'warn' : 'ok'}" title="Pautas em Agora com próximo passo, responsável e data do próximo marco"><b class="num">${pctAgora == null ? '—' : pctAgora + '%'}</b>do Agora completo</span>
         <span class="${nRisk ? 'warn' : ''}"><b class="num">${nRisk}</b>atenção ou crítico</span>
         <span class="${nLate ? 'crit' : ''}"><b class="num">${nLate}</b>atrasados</span>
-        <span class="${nEu ? 'warn' : ''}" title="Pautas em que ${EU} é quem está segurando o próximo passo"><b class="num">${nEu}</b>aguardando ${EU}</span>
       </div>
       ${wipHTML ? `<div class="kpi-strip" role="group" aria-label="Pautas em Agora por responsável, limite ${WIP_AGORA}">${wipHTML}</div>` : ''}
       <section class="block" data-sec="agora">${head('Prioridades da semana')}
