@@ -218,7 +218,7 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .ferias-item.photo > span:first-child { background: var(--scrim-dark); color: var(--on-accent); padding: 6px 10px; border-radius: 8px; max-width: calc(100% - 28px); }
 .ferias-item.photo .nm, .ferias-item.photo .dt, .ferias-item.photo.now .dt { color: var(--on-accent); }
 .ferias-item.photo .rm, .ferias-item.photo .ph { color: var(--on-accent); background: var(--scrim-dark); position: absolute; top: 8px; }
-.ferias-item.photo .rm { right: 8px; } .ferias-item.photo .ph { right: 32px; }
+.ferias-item.photo .rm { right: 8px; } .ferias-item.photo .ph { right: 32px; } .ferias-item.photo .ph[data-fr-edit] { right: 56px; }
 .ferias-item.photo .rm:hover, .ferias-item.photo .ph:hover { background: var(--ink); color: var(--on-accent); }
 .ferias-item .ph { margin-left: 2px; border: 0; background: transparent; color: var(--silver); width: 20px; height: 20px; border-radius: 4px; display: grid; place-items: center; padding: 0; flex: none; }
 .ferias-item .ph:hover { color: var(--ink); background: var(--mist); }
@@ -229,10 +229,16 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
 .ferias-form label { font-size: 11px; color: var(--fog); display: block; margin-bottom: 2px; }
 .readonly .box .mini, .readonly .ferias-item .rm, .readonly .ferias-item .ph { display: none; }
 /* Vitórias da semana: caixas empilhadas, arquivadas por semana na aba Concluídos */
+.lembrete { padding: 6px 0; border-top: 1px solid var(--tint-line); }
+.lembrete:first-child { border-top: 0; }
+.lembrete .steps { font-size: 12px; color: var(--ink); line-height: 1.45; }
+.lembrete .lacts { display: flex; gap: 10px; margin-top: 2px; }
+.lembrete .lacts .mini { font-size: 11px; }
+.box.avisos .fmt-bar { margin-bottom: 4px; } .box.avisos .fmt-bar button { width: 28px; height: 26px; font-size: 12px; }
 .vit-item { padding: 6px 0; border-top: 1px solid var(--hairline); }
 .vit-item:first-child { border-top: 0; }
-.vit-item .nm { font-weight: 600; color: var(--ink); display: block; line-height: 1.3; }
-.vit-item .tx { color: var(--ash); display: block; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vit-item .tx { font-weight: 600; color: var(--ink); display: block; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vit-item .nm { color: var(--fog); display: block; line-height: 1.3; margin-top: 2px; }
 .vit-arq { background: var(--paper); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 16px var(--card-pad) 8px; margin-bottom: 16px; }
 .vit-arq h3 { font-size: 15px; font-weight: 600; color: var(--ink); padding: 0 0 8px; line-height: 1.4; }
 .vit-arq .vit-item { padding: 10px 0; font-size: 15px; }
@@ -619,6 +625,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
     plus: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
     send: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>',
+    pencil: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16zM13 7l4 4"/></svg>',
     camera: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
     x: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     trash: '<svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
@@ -630,7 +637,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _tarefas: { texto: '' }, _ferias: { itens: [] }, _vitorias: { itens: [], arquivo: [] } }, ui: { vitForm: false, avisosOpen: null, avisosEdit: false, tarefasOpen: null, tarefasEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false, cronoMes: null }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
+  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { itens: [] }, _tarefas: { texto: '' }, _ferias: { itens: [] }, _vitorias: { itens: [], arquivo: [] } }, ui: { vitForm: false, feriasEdit: null, avisosOpen: null, avisoForm: null, tarefasOpen: null, tarefasEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false, cronoMes: null }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -777,7 +784,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
   const feriasAtivas = () => { const t = today(); return (state.meta._ferias.itens || []).filter(i => i.fim && parseISO(i.fim) && parseISO(i.fim) >= t).slice().sort((a, b) => String(a.inicio).localeCompare(String(b.inicio))); };
   const emFerias = i => { const t = today(); const a = parseISO(i.inicio), b = parseISO(i.fim); return a && b && a <= t && t <= b; };
-  const periodo = i => { const a = parseISO(i.inicio), b = parseISO(i.fim); if (!a || !b) return ''; return a.getMonth() === b.getMonth() ? `${String(a.getDate()).padStart(2, '0')} a ${fmtDay(b)}` : `${fmtDay(a)} a ${fmtDay(b)}`; };
+  const periodo = i => { const a = parseISO(i.inicio), b = parseISO(i.fim); if (!a || !b) return ''; if (a.getFullYear() !== b.getFullYear()) return `${fmtDay(a)} de ${a.getFullYear()} a ${fmtDay(b)} de ${b.getFullYear()}`; return `${a.getMonth() === b.getMonth() ? String(a.getDate()).padStart(2, '0') : fmtDay(a)} a ${fmtDay(b)} de ${b.getFullYear()}`; };
 
   // ---------- Render ----------
   function renderFilters() {
@@ -952,7 +959,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 
   function vitoriasHTML() {
     const v = state.meta._vitorias || { itens: [], arquivo: [] }; const itens = v.itens || []; const form = state.ui.vitForm && state.canWrite !== false;
-    const list = itens.map(i => `<div class="vit-item"><span class="nm">${esc(i.nome)}</span><span class="tx">${esc(i.vitoria)}</span></div>`).join('');
+    const list = itens.map(i => `<div class="vit-item"><span class="tx">${esc(i.vitoria)}</span><span class="nm">${esc(i.nome)}</span></div>`).join('');
     const f = form ? `<div class="ferias-form"><div><label for="vtNome">Nome</label><input id="vtNome" data-meta="vform" placeholder="Quem"></div><div><label for="vtTexto">Vitória</label><textarea id="vtTexto" data-meta="vform" rows="3" placeholder="O que foi conquistado"></textarea></div><div class="acts"><button class="mini" type="button" id="vitSave">Salvar</button><button class="mini quiet" type="button" id="vitCancel">Cancelar</button></div></div>`
       : `<div class="acts"><button class="mini" type="button" id="vitAdd">${I.plus}<span>Adicionar vitória</span></button>${itens.length ? '<button class="mini quiet" type="button" id="vitArquivar">Arquivar vitórias</button>' : ''}</div>`;
     return `<section class="box vitorias open"><div class="box-head"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><span class="t">Vitórias da semana</span></div><div class="box-body">${list}${f}</div></section>`;
@@ -966,19 +973,19 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     return `<section class="box tarefas ${open ? 'open' : ''}"><button class="box-head" type="button" id="tarefasToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg><span class="t">Tarefas do Check de Metas</span>${txt && !open ? '<span class="mark" aria-label="há tarefas"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
   }
   function avisosHTML() {
-    const a = state.meta._avisos || {}; const txt = String(a.texto || '').trim(); const edit = state.ui.avisosEdit && state.canWrite !== false;
-    const open = edit || (state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen);
-    const body = edit
-      ? `<textarea data-meta="avisos" id="avisosText" aria-label="Avisos e lembretes" placeholder="Avisos e lembretes da semana">${esc(a.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="avisosDone">Concluir</button></div>`
-      : `${txt ? `<div class="aviso-text">${esc(txt)}</div>` : '<div class="aviso-text placeholder">Nenhum aviso.</div>'}${a.atualizadoEm ? `<div class="stamp">Atualizado ${new Date(a.atualizadoEm).toLocaleDateString('pt-BR')}</div>` : ''}<div class="acts"><button class="mini" type="button" id="avisosEdit">${txt ? 'Editar' : 'Escrever aviso'}</button></div>`;
-    return `<section class="box avisos ${open ? 'open' : ''}"><button class="box-head" type="button" id="avisosToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="t">Avisos e lembretes</span>${txt && !open ? '<span class="mark" aria-label="há avisos"></span>' : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${body}</div></section>`;
+    const a = state.meta._avisos || {}; const itens = a.itens || []; const f = state.ui.avisoForm && state.canWrite !== false ? state.ui.avisoForm : null;
+    const open = !!f || (state.ui.avisosOpen === null ? !!itens.length : state.ui.avisosOpen);
+    const list = itens.map(i => `<div class="lembrete">${stepsHTML(i.texto) || '<span class="placeholder">(vazio)</span>'}<div class="lacts"><button class="mini" type="button" data-lem-edit="${esc(i.id)}">Editar</button><button class="mini quiet" type="button" data-lem-rm="${esc(i.id)}">Remover</button></div></div>`).join('');
+    const form = f ? `${fmtBar('avisoText', false)}<textarea data-meta="aform" id="avisoText" aria-label="Lembrete" placeholder="Aviso ou lembrete da semana">${esc(f.texto || '')}</textarea><div class="acts"><button class="mini" type="button" id="avisoSave">Salvar</button><button class="mini quiet" type="button" id="avisoCancel">Cancelar</button></div>`
+      : `${itens.length ? '' : '<div class="aviso-text placeholder">Nenhum aviso.</div>'}<div class="acts"><button class="mini" type="button" id="avisoAdd">${I.plus}<span>Adicionar lembrete</span></button></div>`;
+    return `<section class="box avisos ${open ? 'open' : ''}"><button class="box-head" type="button" id="avisosToggle" aria-expanded="${open}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="t">Avisos e lembretes</span>${itens.length && !open ? `<span class="mark" aria-label="${itens.length} lembretes"></span>` : ''}<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><div class="box-body">${list}${form}</div></section>`;
   }
   const cssUrl = u => String(u || '').replace(/[^A-Za-z0-9:;,/+=._-]/g, ''); // só data: URLs geradas aqui
   function feriasHTML() {
     const itens = feriasAtivas(); const form = state.ui.feriasForm && state.canWrite !== false;
-    const list = itens.length ? itens.map(i => `<div class="ferias-item ${emFerias(i) ? 'now' : ''}${i.foto ? ' photo' : ''}"${i.foto ? ` style="background-image:url(${cssUrl(i.foto)})"` : ''}><span><span class="nm">${esc(i.nome)}</span><span class="dt">${periodo(i)}${emFerias(i) ? ', em férias' : ''}</span></span><button class="ph" type="button" data-fr-foto="${esc(i.id)}" aria-label="${i.foto ? 'Trocar' : 'Adicionar'} foto de fundo de ${esc(i.nome)}" title="${i.foto ? 'Trocar foto' : 'Foto de fundo'}">${I.camera}</button><button class="rm" type="button" data-fr-rm="${esc(i.id)}" aria-label="Remover férias de ${esc(i.nome)}">${I.x}</button></div>`).join('') : '<div class="placeholder">Ninguém de férias ou com férias marcadas.</div>';
-    const foto = state.ui.feriasFoto;
-    const f = form ? `<div class="ferias-form"><div><label for="frNome">Nome</label><input id="frNome" data-meta="fform" placeholder="Quem"></div><div><label for="frIni">Início</label><input id="frIni" type="date" data-meta="fform"></div><div><label for="frFim">Fim</label><input id="frFim" type="date" data-meta="fform"></div><div class="ferias-foto">${foto ? `<span class="thumb" style="background-image:url(${cssUrl(foto)})" aria-hidden="true"></span>` : ''}<button class="mini" type="button" data-fr-foto="new">${I.camera}<span>${foto ? 'Trocar foto' : 'Foto de fundo (opcional)'}</span></button>${foto ? '<button class="mini quiet" type="button" id="feriasFotoRm">Tirar</button>' : ''}</div><div class="acts"><button class="mini" type="button" id="feriasSave">Salvar</button><button class="mini quiet" type="button" id="feriasCancel">Cancelar</button></div></div>`
+    const list = itens.length ? itens.map(i => `<div class="ferias-item ${emFerias(i) ? 'now' : ''}${i.foto ? ' photo' : ''}"${i.foto ? ` style="background-image:url(${cssUrl(i.foto)})"` : ''}><span><span class="nm">${esc(i.nome)}</span><span class="dt">${periodo(i)}${emFerias(i) ? ', em férias' : ''}</span></span><button class="ph" type="button" data-fr-edit="${esc(i.id)}" aria-label="Editar férias de ${esc(i.nome)}" title="Editar">${I.pencil}</button><button class="ph" type="button" data-fr-foto="${esc(i.id)}" aria-label="${i.foto ? 'Trocar' : 'Adicionar'} foto de fundo de ${esc(i.nome)}" title="${i.foto ? 'Trocar foto' : 'Foto de fundo'}">${I.camera}</button><button class="rm" type="button" data-fr-rm="${esc(i.id)}" aria-label="Remover férias de ${esc(i.nome)}">${I.x}</button></div>`).join('') : '<div class="placeholder">Ninguém de férias ou com férias marcadas.</div>';
+    const foto = state.ui.feriasFoto; const ed = form && state.ui.feriasEdit ? (state.meta._ferias.itens || []).find(i => i.id === state.ui.feriasEdit) : null;
+    const f = form ? `<div class="ferias-form"><div><label for="frNome">Nome</label><input id="frNome" data-meta="fform" placeholder="Quem" value="${esc(ed ? ed.nome : '')}"></div><div><label for="frIni">Início</label><input id="frIni" type="date" data-meta="fform" value="${esc(ed ? ed.inicio : '')}"></div><div><label for="frFim">Fim</label><input id="frFim" type="date" data-meta="fform" value="${esc(ed ? ed.fim : '')}"></div><div class="ferias-foto">${foto ? `<span class="thumb" style="background-image:url(${cssUrl(foto)})" aria-hidden="true"></span>` : ''}<button class="mini" type="button" data-fr-foto="new">${I.camera}<span>${foto ? 'Trocar foto' : 'Foto de fundo (opcional)'}</span></button>${foto ? '<button class="mini quiet" type="button" id="feriasFotoRm">Tirar</button>' : ''}</div><div class="acts"><button class="mini" type="button" id="feriasSave">Salvar</button><button class="mini quiet" type="button" id="feriasCancel">Cancelar</button></div></div>`
       : `<div class="acts"><button class="mini" type="button" id="feriasAdd">${I.plus}<span>Adicionar</span></button></div>`;
     return `<section class="box ferias open"><div class="box-head"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><span class="t">Férias do time</span></div><div class="box-body">${list}${f}<input type="file" id="frFile" accept="image/*" data-meta="fform" aria-label="Escolher foto de fundo" tabindex="-1"></div></section>`;
   }
@@ -1038,7 +1045,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   function viewConcluidos() {
     const done = all().filter(p => p.etapa === 'concluido').sort((a, b) => (b.concluidoEm || '').localeCompare(a.concluidoEm || ''));
     const arq = ((state.meta._vitorias || {}).arquivo || []).slice().sort((a, b) => String(b.arquivadoEm || '').localeCompare(String(a.arquivadoEm || '')));
-    const vit = arq.length ? `<section class="block">${head('Vitórias arquivadas', `${arq.reduce((n, g) => n + (g.itens || []).length, 0)} vitórias em ${arq.length} semana${arq.length > 1 ? 's' : ''}.`)}${arq.map(g => `<div class="vit-arq"><h3>${esc(g.semana)}</h3>${(g.itens || []).map(i => `<div class="vit-item"><span class="nm">${esc(i.nome)}</span><span class="tx">${esc(i.vitoria)}</span></div>`).join('')}</div>`).join('')}</section>` : '';
+    const vit = arq.length ? `<section class="block">${head('Vitórias arquivadas', `${arq.reduce((n, g) => n + (g.itens || []).length, 0)} vitórias em ${arq.length} semana${arq.length > 1 ? 's' : ''}.`)}${arq.map(g => `<div class="vit-arq"><h3>${esc(g.semana)}</h3>${(g.itens || []).map(i => `<div class="vit-item"><span class="tx">${esc(i.vitoria)}</span><span class="nm">${esc(i.nome)}</span></div>`).join('')}</div>`).join('')}</section>` : '';
     if (!done.length && !vit) return `<div class="empty">Nenhum projeto concluído ainda.</div>`;
     return `${done.length ? `<section class="block">${head('Histórico', `${done.length} projetos concluídos.`)}${groupByFrente(done, true, false, 'hist')}</section>` : ''}${vit}`;
   }
@@ -1272,25 +1279,37 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (e.target.closest('#tarefasToggle')) { const txt = String(state.meta._tarefas.texto || '').trim(); const cur = state.ui.tarefasOpen === null ? !!txt : state.ui.tarefasOpen; state.ui.tarefasOpen = !cur; if (!state.ui.tarefasOpen) state.ui.tarefasEdit = false; render(); return; }
     if (e.target.closest('#tarefasEdit')) { if (state.canWrite === false) return; state.ui.tarefasEdit = true; state.ui.tarefasOpen = true; render(); const t = $('#tarefasText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
     if (e.target.closest('#tarefasDone')) { state.ui.tarefasEdit = false; if (!String(state.meta._tarefas.texto || '').trim()) state.ui.tarefasOpen = null; persistMeta('_tarefas', true); render(); return; }
-    if (e.target.closest('#avisosToggle')) { const txt = String(state.meta._avisos.texto || '').trim(); const cur = state.ui.avisosOpen === null ? !!txt : state.ui.avisosOpen; state.ui.avisosOpen = !cur; if (!state.ui.avisosOpen) state.ui.avisosEdit = false; render(); return; }
-    if (e.target.closest('#avisosEdit')) { if (state.canWrite === false) return; state.ui.avisosEdit = true; state.ui.avisosOpen = true; render(); const t = $('#avisosText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
-    if (e.target.closest('#avisosDone')) { state.ui.avisosEdit = false; if (!String(state.meta._avisos.texto || '').trim()) state.ui.avisosOpen = null; persistMeta('_avisos', true); render(); return; }
-    if (e.target.closest('#feriasAdd')) { if (state.canWrite === false) return; state.ui.feriasForm = true; render(); const n = $('#frNome'); if (n) n.focus(); return; }
-    if (e.target.closest('#feriasCancel')) { state.ui.feriasForm = false; state.ui.feriasFoto = null; render(); return; }
+    if (e.target.closest('#avisosToggle')) { const n = (state.meta._avisos.itens || []).length; const cur = state.ui.avisosOpen === null ? !!n : state.ui.avisosOpen; state.ui.avisosOpen = !cur; if (!state.ui.avisosOpen) state.ui.avisoForm = null; render(); return; }
+    if (e.target.closest('#avisoAdd')) { if (state.canWrite === false) return; state.ui.avisoForm = { id: null, texto: '' }; state.ui.avisosOpen = true; render(); const t = $('#avisoText'); if (t) t.focus(); return; }
+    const le = e.target.closest('[data-lem-edit]'); if (le) { if (state.canWrite === false) return; const it = (state.meta._avisos.itens || []).find(i => i.id === le.dataset.lemEdit); if (!it) return; state.ui.avisoForm = { id: it.id, texto: it.texto || '' }; render(); const t = $('#avisoText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } return; }
+    if (e.target.closest('#avisoCancel')) { state.ui.avisoForm = null; render(); return; }
+    if (e.target.closest('#avisoSave')) {
+      if (state.canWrite === false) return;
+      const texto = $('#avisoText').value.trim(); if (!texto) { $('#avisoText').focus(); return; }
+      const a = state.meta._avisos; const f = state.ui.avisoForm; const now = new Date().toISOString();
+      if (f && f.id) { a.itens = (a.itens || []).map(i => i.id === f.id ? Object.assign({}, i, { texto, atualizadoEm: now }) : i); }
+      else { a.itens = (a.itens || []).concat([{ id: 'l' + Date.now().toString(36), texto, criadoEm: now }]); }
+      state.ui.avisoForm = null; persistMeta('_avisos', true); render(); return;
+    }
+    const lr = e.target.closest('[data-lem-rm]'); if (lr) { if (state.canWrite === false) return; if (!lr.dataset.arm) { lr.dataset.arm = '1'; lr.textContent = 'Remover?'; return; } const a = state.meta._avisos; a.itens = (a.itens || []).filter(i => i.id !== lr.dataset.lemRm); if (!a.itens.length) state.ui.avisosOpen = null; persistMeta('_avisos', true); render(); return; }
+    if (e.target.closest('#feriasAdd')) { if (state.canWrite === false) return; state.ui.feriasEdit = null; state.ui.feriasForm = true; render(); const n = $('#frNome'); if (n) n.focus(); return; }
+    if (e.target.closest('#feriasCancel')) { state.ui.feriasForm = false; state.ui.feriasEdit = null; state.ui.feriasFoto = null; render(); return; }
+    const fe = e.target.closest('[data-fr-edit]'); if (fe) { if (state.canWrite === false) return; state.ui.feriasEdit = fe.dataset.frEdit; state.ui.feriasForm = true; state.ui.feriasFoto = null; render(); const n = $('#frNome'); if (n) n.focus(); return; }
     if (e.target.closest('#feriasFotoRm')) { state.ui.feriasFoto = null; render(); return; }
     const fp = e.target.closest('[data-fr-foto]'); if (fp) { if (state.canWrite === false) return; const inp = $('#frFile'); if (!inp) return; inp.dataset.target = fp.dataset.frFoto; inp.value = ''; inp.click(); return; }
     if (e.target.closest('#feriasSave')) {
       const nome = $('#frNome').value.trim(), ini = $('#frIni').value, fim = $('#frFim').value;
       if (!nome || !ini || !fim) { $('#frNome').focus(); return; }
-      const itens = (state.meta._ferias.itens || []).filter(i => i.fim && parseISO(i.fim) >= today());
-      itens.push(Object.assign({ id: 'f' + Date.now().toString(36), nome, inicio: ini <= fim ? ini : fim, fim: ini <= fim ? fim : ini }, state.ui.feriasFoto ? { foto: state.ui.feriasFoto } : {}));
-      state.meta._ferias.itens = itens; state.ui.feriasForm = false; state.ui.feriasFoto = null; persistMeta('_ferias', true); render(); return;
+      let itens = (state.meta._ferias.itens || []).filter(i => i.fim && parseISO(i.fim) >= today());
+      const dados = { nome, inicio: ini <= fim ? ini : fim, fim: ini <= fim ? fim : ini };
+      if (state.ui.feriasEdit) itens = itens.map(i => i.id === state.ui.feriasEdit ? Object.assign({}, i, dados, state.ui.feriasFoto ? { foto: state.ui.feriasFoto } : {}) : i);
+      else itens.push(Object.assign({ id: 'f' + Date.now().toString(36) }, dados, state.ui.feriasFoto ? { foto: state.ui.feriasFoto } : {}));
+      state.meta._ferias.itens = itens; state.ui.feriasForm = false; state.ui.feriasEdit = null; state.ui.feriasFoto = null; persistMeta('_ferias', true); render(); return;
     }
     const rm = e.target.closest('[data-fr-rm]'); if (rm) { if (state.canWrite === false) return; if (!rm.dataset.arm) { rm.dataset.arm = '1'; rm.textContent = 'Remover?'; rm.setAttribute('aria-label', 'Confirmar remoção'); return; } state.meta._ferias.itens = (state.meta._ferias.itens || []).filter(i => i.id !== rm.dataset.frRm); persistMeta('_ferias', true); render(); return; }
   });
   document.addEventListener('input', e => {
     if (e.target.id === 'q') { state.q = e.target.value; render(); return; }
-    if (e.target.dataset.meta === 'avisos') { if (state.canWrite === false) return; state.meta._avisos.texto = e.target.value; persistMeta('_avisos', false); return; }
     if (e.target.dataset.meta === 'tarefas') { if (state.canWrite === false) return; state.meta._tarefas.texto = e.target.value; persistMeta('_tarefas', false); return; }
     const p = state.selected && state.projects[state.selected]; if (!p || state.canWrite === false) return;
     const f = e.target.dataset.f;
@@ -1345,7 +1364,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
   });
   document.addEventListener('focusout', e => { if (e.target && e.target.id === 'q' && !state.q) { state.ui.searchOpen = false; setTimeout(render, 0); } });
-  document.addEventListener('focusout', e => { const k = e.target && e.target.dataset && e.target.dataset.meta; if (k === 'avisos' || k === 'tarefas') setTimeout(() => { const ae = document.activeElement; if (!ae || (ae.dataset.meta !== k && !ae.closest('.fmt-bar'))) render(); }, 0); });
+  document.addEventListener('focusout', e => { const k = e.target && e.target.dataset && e.target.dataset.meta; if (k === 'tarefas') setTimeout(() => { const ae = document.activeElement; if (!ae || (ae.dataset.meta !== k && !ae.closest('.fmt-bar'))) render(); }, 0); });
 
   // ---------- Reordenar: arrastar pela alça (mouse e toque) ----------
   const drag = { src: null, ghost: null, list: null, origList: null, panel: null, sec: null, overSec: null, startY: 0, startX: 0, offY: 0, active: false, suppressClick: false, pointerId: null };
@@ -1491,8 +1510,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const stepsList = p => { const st = parseSteps(p.proximoPasso); if (!st.length) return ''; return `<ul style="margin:4px 0 0 18px;padding:0">${st.map(x => `<li style="${F}font-size:11pt;color:${C.body};margin:0 0 2px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${inline(x.text)}</li>`).join('')}</ul>`; };
     let h = `<div style="${F}color:${C.ink}"><h1 style="${F}font-size:16pt;color:${C.head};margin:0 0 2px">Weekly Review, ${esc(weekLabel())}</h1>`;
     h += `<p style="${F}font-size:10pt;color:${C.meta};margin:0 0 12px">Painel Semanal de Pautas</p>`;
-    const aviso = String(state.meta._avisos.texto || '').trim();
-    if (aviso) h += h2('Avisos e lembretes') + `<p style="${F}font-size:11pt;white-space:pre-wrap;margin:0 0 8px">${esc(aviso)}</p>`;
+    const avisos = (state.meta._avisos.itens || []).map(i => parseSteps(i.texto)).filter(x => x.length);
+    if (avisos.length) h += h2('Avisos e lembretes') + `<ul style="margin:0 0 0 18px;padding:0">${avisos.map(st => `<li style="${F}font-size:11pt;margin:0 0 4px;list-style:none">&#8226; ${st.map(x => inline(x.text)).join('<br>')}</li>`).join('')}</ul>`;
     const tarefas = parseSteps(state.meta._tarefas.texto);
     if (tarefas.length) h += h2('Tarefas do Check de Metas') + `<ul style="margin:0 0 0 18px;padding:0">${tarefas.map(x => `<li style="${F}font-size:11pt;margin:0 0 4px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${inline(x.text)}</li>`).join('')}</ul>`;
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; h += h2(g.nome) + '<ul style="margin:0 0 0 18px;padding:0">'; ms.forEach(m => { h += li(`<b>${esc(m.nome)}</b><span style="color:${C.meta}">${m.escopo ? ' (' + esc(m.escopo) + ')' : ''}, ${esc(metaStatusTxt(m))}${m.dono ? ', ' + esc(m.dono) : ''}</span>`); }); h += '</ul>'; });
@@ -1515,8 +1534,8 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   function resumoTexto() {
     const { frentes, atencao, done, fila, backlog } = resumoDados();
     const L = [`WEEKLY REVIEW, ${weekLabel()}`, ''];
-    const aviso = String(state.meta._avisos.texto || '').trim();
-    if (aviso) { L.push('AVISOS E LEMBRETES'); L.push(aviso); L.push(''); }
+    const avisos = (state.meta._avisos.itens || []).map(i => parseSteps(i.texto)).filter(x => x.length);
+    if (avisos.length) { L.push('AVISOS E LEMBRETES'); avisos.forEach(st => L.push(`• ${st.map(x => plain(x.text)).join(' ')}`)); L.push(''); }
     const tarefas = parseSteps(state.meta._tarefas.texto);
     if (tarefas.length) { L.push('TAREFAS DO CHECK DE METAS'); tarefas.forEach(x => L.push(`• ${plain(x.text)}`)); L.push(''); }
     METAS_GRUPOS.forEach(g => { const ms = metasAll().filter(m => m.grupo === g.id); if (!ms.length) return; L.push(g.nome.toUpperCase()); ms.forEach(m => L.push(`• ${m.nome}${m.escopo ? ' (' + m.escopo + ')' : ''}, ${metaStatusTxt(m)}${m.dono ? ', ' + m.dono : ''}`)); L.push(''); });
@@ -1635,7 +1654,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     }
     state.db.collection('projetos').onSnapshot(snap => {
       const next = {}, nextM = {}, nextN = {};
-      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_vitorias') { if (!Array.isArray(m.itens)) m.itens = []; if (!Array.isArray(m.arquivo)) m.arquivo = []; } if ((d.id === '_avisos' || d.id === '_tarefas') && typeof m.texto !== 'string') m.texto = ''; state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
+      snap.docs.forEach(d => { if (!d.exists) return; if (String(d.id).startsWith('_m_')) { nextM[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).startsWith('_n_')) { nextN[d.id] = Object.assign({ id: d.id }, d.data() || {}); return; } if (String(d.id).charAt(0) === '_') { const m = d.data() || {}; if (d.id === '_ferias' && !Array.isArray(m.itens)) m.itens = []; if (d.id === '_vitorias') { if (!Array.isArray(m.itens)) m.itens = []; if (!Array.isArray(m.arquivo)) m.arquivo = []; } if (d.id === '_tarefas' && typeof m.texto !== 'string') m.texto = ''; if (d.id === '_avisos') { if (!Array.isArray(m.itens)) m.itens = []; if (String(m.texto || '').trim() && !m.itens.length) { m.itens = [{ id: 'l0', texto: String(m.texto).trim(), criadoEm: m.atualizadoEm || new Date().toISOString() }]; } m.texto = ''; } state.meta[d.id] = m; return; } next[d.id] = norm(d.id, d.data()); });
       // Ajustes em metas já gravadas (uma vez, só no que ainda está no formato antigo)
       Object.values(nextM).forEach(m => {
         let ch = false;
