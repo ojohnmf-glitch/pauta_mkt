@@ -221,11 +221,6 @@ main { max-width: var(--page); margin: 0 auto; padding: 40px max(16px, env(safe-
   .side { position: static; order: 2; } /* celular e tablet: prioridades primeiro, metas e avisos no fim */
 }
 
-/* Resumo das demandas: uma linha discreta acima das prioridades */
-.kpi-strip { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12px; color: var(--fog); line-height: 1.5; margin: 0 0 20px; }
-.kpi-strip span { white-space: nowrap; }
-.kpi-strip b { font-weight: 600; color: var(--ink); margin-right: 3px; }
-.kpi-strip .warn b { color: var(--warn-text); } .kpi-strip .crit b { color: var(--crit-text); } .kpi-strip .ok b { color: var(--ok-text); }
 /* Scorecard na lateral: cartões empilhados e compactos */
 .sc-wrap { background: var(--glass); border-radius: 12px; padding: 10px 12px 12px; }
 .side-title { font-size: 13px; font-weight: 600; color: var(--ink); padding: 0 2px 10px; line-height: 1.4; }
@@ -524,6 +519,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     <button class="btn text" id="btnSearch" type="button" aria-expanded="false" aria-controls="q"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Buscar</span></button>
     <label class="search" id="searchWrap"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar pauta, marca ou responsável" aria-label="Buscar pauta" autocomplete="off"><button class="clear" id="qClear" type="button" aria-label="Limpar busca" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></label>
     <div class="menu-wrap resp-wrap" id="respWrap"><button class="btn text" id="respBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Filtrar por responsável"><span id="respLabel">Todos os responsáveis</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="respMenu" role="menu" aria-label="Responsável" hidden></div></div>
+    <div class="menu-wrap resp-wrap" id="tagWrap"><button class="btn text" id="tagBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Filtrar por marca ou etiqueta"><span id="tagLabel">Todas as marcas</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu" id="tagMenu" role="menu" aria-label="Marca ou etiqueta" hidden></div></div>
     <span class="count" id="filterCount" role="status" aria-live="polite"></span>
     <button class="btn text" id="btnToggleAll" type="button" hidden><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg><span id="toggleAllLabel">Recolher tudo</span></button>
   </div>
@@ -600,7 +596,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   let collapsed = new Set(); try { collapsed = new Set(JSON.parse(localStorage.getItem('pautas.collapsed') || '[]')); } catch (x) {}
   const saveCollapsed = () => { try { localStorage.setItem('pautas.collapsed', JSON.stringify([...collapsed])); } catch (x) {} };
   const TG = '<button class="tg" type="button" aria-label="Recolher ou expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
-  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '' };
+  const state = { projects: {}, metas: {}, notas: {}, meta: { _avisos: { texto: '' }, _ferias: { itens: [] } }, ui: { avisosOpen: null, avisosEdit: false, feriasForm: false, feriasFoto: null, searchOpen: false, notaDraft: null, moreOpen: false }, view: 'semana', selected: null, db: null, canWrite: null, loaded: false, opener: null, q: '', resp: '', tag: '' };
   const $ = (s, el) => (el || document).querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fr = id => FRENTES.find(f => f.id === id) || FRENTES[0];
@@ -671,9 +667,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   const allRaw = () => Object.values(state.projects).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   // Busca sem distinção de acentos e maiúsculas; filtro por responsável
   const fold = v => String(v == null ? '' : v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const filterActive = () => !!(state.q.trim() || state.resp);
+  const filterActive = () => !!(state.q.trim() || state.resp || state.tag);
   function matches(p) {
     if (state.resp && fold(p.responsavel).trim() !== fold(state.resp).trim()) return false;
+    if (state.tag && !(p.tags || []).some(t => fold(t).trim() === fold(state.tag).trim())) return false;
     const q = fold(state.q).trim(); if (!q) return true;
     return [p.titulo, p.responsavel, p.aguardando, p.proximoPasso, p.notas, fr(p.frente).nome, fr(p.frente).curto].concat(p.tags || []).some(v => fold(v).includes(q));
   }
@@ -753,6 +750,10 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const cur = state.resp;
     $('#respLabel').textContent = cur || 'Todos os responsáveis'; btn.classList.toggle('on', !!cur);
     $('#respMenu').innerHTML = ['', ...names].map(n => `<button type="button" role="menuitemradio" aria-checked="${n === cur}" data-resp="${esc(n)}">${n ? esc(n) : 'Todos os responsáveis'}<svg class="ic tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('');
+    const tags = [...new Set(allRaw().flatMap(p => (p.tags || []).map(t => String(t).trim())).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    if (state.tag && !tags.includes(state.tag)) { state.tag = ''; }
+    $('#tagLabel').textContent = state.tag || 'Todas as marcas'; $('#tagBtn').classList.toggle('on', !!state.tag); $('#tagWrap').hidden = !tags.length;
+    $('#tagMenu').innerHTML = ['', ...tags].map(t => `<button type="button" role="menuitemradio" aria-checked="${t === state.tag}" data-tag="${esc(t)}">${t ? esc(t) : 'Todas as marcas'}<svg class="ic tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`).join('');
     $('#qClear').hidden = !state.q;
     const sOpen = state.ui.searchOpen || !!state.q; $('#searchWrap').classList.toggle('open', sOpen); $('#btnSearch').hidden = sOpen; $('#btnSearch').setAttribute('aria-expanded', sOpen);
     const total = allRaw().length, vis = all().length;
@@ -891,9 +892,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const proximo = live.filter(p => p.horizonte === 'proximo');
     const depois = live.filter(p => p.horizonte === 'depois');
     const done = all().filter(doneRecently);
-    const nLate = act.filter(isLate).length;
-    const nRisk = act.filter(p => saudeDe(p) !== 'ok').length;
-    const pctAgora = agora.length ? Math.round(agora.filter(agoraCompleto).length / agora.length * 100) : null;
     if (!act.length && !done.length) {
       return filterActive() ? `<div class="empty">Nenhuma pauta corresponde à busca.</div>` : `<div class="empty">Nenhum projeto cadastrado ainda. Use “Novo projeto” para incluir a primeira pauta da área.</div>`;
     }
@@ -904,11 +902,6 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       ${avisosHTML()}${feriasHTML()}
       </aside>
       <div class="semana-main">
-      <div class="kpi-strip" role="group" aria-label="Resumo das demandas">
-        <span class="${pctAgora == null ? '' : pctAgora < 100 ? 'warn' : 'ok'}" title="Pautas em Agora com próximo passo, responsável e data do próximo marco"><b class="num">${pctAgora == null ? '—' : pctAgora + '%'}</b>do Agora completo</span>
-        <span class="${nRisk ? 'warn' : ''}"><b class="num">${nRisk}</b>atenção ou crítico</span>
-        <span class="${nLate ? 'crit' : ''}"><b class="num">${nLate}</b>atrasados</span>
-      </div>
       <section class="block" data-sec="agora">${head('Prioridades da semana')}
         ${agora.length ? groupByFrente(agora, false, false, 'agora') : '<div class="empty">Nada em “Agora”. Entra aqui a pauta com próximo passo, responsável e data do próximo marco: abra um projeto e marque o horizonte, ou arraste uma pauta para cá.</div>'}</section>
       <section class="block" data-sec="parked">${head('Estacionados')}
@@ -1116,6 +1109,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (!e.target.closest('#respWrap') && !$('#respMenu').hidden) showResp(false);
     const rp = e.target.closest('[data-resp]'); if (rp) { state.resp = rp.dataset.resp; showResp(false); render(); $('#respBtn').focus(); return; }
     if (e.target.closest('#respBtn')) { showResp($('#respMenu').hidden); return; }
+    if (!e.target.closest('#tagWrap') && !$('#tagMenu').hidden) showTag(false);
+    const tg2 = e.target.closest('[data-tag]'); if (tg2) { state.tag = tg2.dataset.tag; showTag(false); render(); $('#tagBtn').focus(); return; }
+    if (e.target.closest('#tagBtn')) { showTag($('#tagMenu').hidden); return; }
     if (e.target.closest('#btnSearch')) { state.ui.searchOpen = true; render(); $('#q').focus(); return; }
     if (e.target.closest('#qClear')) { state.q = ''; $('#q').value = ''; state.ui.searchOpen = false; render(); $('#btnSearch').focus(); return; }
     const tgc = e.target.closest('[data-toggle-card]'); if (tgc) { const card = tgc.closest('[data-key]'); const k = card.dataset.key; if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k); saveCollapsed(); render(); const again = document.querySelector(`[data-key="${CSS.escape(k)}"] .tg`); if (again && e.target.closest('.tg')) again.focus(); return; }
@@ -1232,10 +1228,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       persist(p, false); return;
     }
   });
+  function showTag(on) { const m = $('#tagMenu'), b = $('#tagBtn'); m.hidden = !on; b.setAttribute('aria-expanded', on); if (on) { const cur = m.querySelector('[aria-checked="true"]') || m.querySelector('button'); if (cur) cur.focus(); } }
   function showResp(on) { const m = $('#respMenu'), b = $('#respBtn'); m.hidden = !on; b.setAttribute('aria-expanded', on); if (on) { const cur = m.querySelector('[aria-checked="true"]') || m.querySelector('button'); if (cur) cur.focus(); } }
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !$('#novoMenu').hidden) { showMenu(false); $('#btnNovo').focus(); return; }
     if (e.key === 'Escape' && !$('#respMenu').hidden) { showResp(false); $('#respBtn').focus(); return; }
+    if (e.key === 'Escape' && !$('#tagMenu').hidden) { showTag(false); $('#tagBtn').focus(); return; }
     if (e.key === 'Escape' && e.target.id === 'q') { state.q = ''; e.target.value = ''; state.ui.searchOpen = false; render(); $('#btnSearch').focus(); return; }
     if (e.key === 'Escape' && state.selected) { closeDrawer(); return; }
     // Alt+seta: move a pauta na lista
