@@ -356,7 +356,8 @@ section.block[data-sec="parked"] .row.paused { opacity: 1; }
 .row .wait.crit { color: var(--crit-text); background: var(--danger-soft); }
 .saude-line { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); line-height: 1.4; }
 .saude-line .why { color: var(--fog); }
-.saude-line .how { font-size: 13px; color: var(--fog); flex-basis: 100%; }
+.check-line { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ash); line-height: 1.4; cursor: pointer; }
+.check-line input { width: 16px; height: 16px; margin: 0; flex: none; }
 .saude-line { flex-wrap: wrap; }
 .ring { width: 24px; height: 24px; flex: none; }
 .ring .track { fill: none; stroke: var(--hairline); stroke-width: 1.6; }
@@ -428,6 +429,11 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
 .meta-line { color: var(--fog); font-size: 13px; line-height: 1.4; }
 .readonly .add, .readonly .danger, .readonly #btnConcluir, .readonly #btnReabrir { display: none; }
 .field textarea.next { min-height: 96px; line-height: 1.55; }
+.fmt-bar { display: flex; align-items: center; gap: 4px; margin-bottom: -2px; }
+.fmt-bar button { width: 32px; height: 30px; border: 1px solid var(--hairline); border-radius: var(--r-btn); background: var(--paper); color: var(--ash); font-size: 14px; display: grid; place-items: center; padding: 0; }
+.fmt-bar button:hover { border-color: var(--silver); color: var(--ink); background: var(--paper-hover); }
+.fmt-bar .sep { width: 1px; height: 18px; background: var(--hairline); margin: 0 4px; }
+.steps b { font-weight: 600; color: var(--ink); } .steps u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .field .reveal { align-self: flex-start; }
 .field.collapsed textarea, .field.more.collapsed .more-body { display: none; }
 .more-body { display: flex; flex-direction: column; gap: 20px; }
@@ -629,7 +635,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (dV != null && dV > 0) return { s: 'atrasado', why: `${qual} vencido há ${dV} dia${dV > 1 ? 's' : ''}` };
     if (p.horizonte !== 'depois') { // backlog é ideia: não cobra próximo passo nem tempo parado
       if (!String(p.proximoPasso || '').trim()) return { s: 'atencao', why: 'sem próximo passo' };
-      if (dE > DIAS_PARADO) return { s: 'atencao', why: `${(ETAPAS[p.etapa] || p.etapa).toLowerCase()} há ${dE} dias` };
+      if (p.acompanhar && dE > DIAS_PARADO) return { s: 'atencao', why: `${(ETAPAS[p.etapa] || p.etapa).toLowerCase()} há ${dE} dias` };
     }
     if (dV != null && dV >= -DIAS_MARCO) return { s: 'atencao', why: dV === 0 ? `${qual} vence hoje` : `${qual} vence em ${-dV} dia${dV < -1 ? 's' : ''}` };
     return { s: 'ok', why: '' };
@@ -653,7 +659,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   // ---------- Modelo ----------
   function blank(frente) {
     return { titulo: '', frente: frente || 'alpmi', tags: [], etapa: 'nao_iniciado', horizonte: 'proximo',
-      responsavel: fr(frente || 'alpmi').lider, proximoPasso: '', marco: '', prazo: '', aguardando: '', aguardandoDesde: '', etapaDesde: '', notas: '', meta: '', ordem: Date.now(),
+      responsavel: fr(frente || 'alpmi').lider, proximoPasso: '', marco: '', prazo: '', aguardando: '', aguardandoDesde: '', etapaDesde: '', acompanhar: false, notas: '', meta: '', ordem: Date.now(),
       atualizadoEm: new Date().toISOString(), concluidoEm: '' };
   }
   const norm = (id, d) => Object.assign(blank(), d || {}, { id, tags: Array.isArray(d && d.tags) ? d.tags : [] });
@@ -679,9 +685,12 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     });
   }
   const checklist = p => { const c = parseSteps(p.proximoPasso).filter(x => x.kind === 'check'); return { n: c.length, d: c.filter(x => x.done).length }; };
+  // Marcação leve dentro do texto: **negrito**, *itálico*, __sublinhado__
+  const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/__(.+?)__/g, '<u>$1</u>').replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1<i>$2</i>');
+  const plain = t => String(t).replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1$2');
   function stepsHTML(txt) {
     const st = parseSteps(txt); if (!st.length) return '';
-    return `<span class="steps">${st.map(x => x.kind === 'check' ? `<span class="step ${x.done ? 'done' : ''}"><span class="box" aria-hidden="true"></span><span class="txt">${x.done ? '<span class="sr-only">feito: </span>' : ''}${esc(x.text)}</span></span>` : x.kind === 'bullet' ? `<span class="step"><span class="bul" aria-hidden="true"></span><span class="txt">${esc(x.text)}</span></span>` : `<span class="step"><span class="txt">${esc(x.text)}</span></span>`).join('')}</span>`;
+    return `<span class="steps">${st.map(x => x.kind === 'check' ? `<span class="step ${x.done ? 'done' : ''}"><span class="box" aria-hidden="true"></span><span class="txt">${x.done ? '<span class="sr-only">feito: </span>' : ''}${inline(x.text)}</span></span>` : x.kind === 'bullet' ? `<span class="step"><span class="bul" aria-hidden="true"></span><span class="txt">${inline(x.text)}</span></span>` : `<span class="step"><span class="txt">${inline(x.text)}</span></span>`).join('')}</span>`;
   }
   function ringHTML(p) {
     const { n, d } = checklist(p);
@@ -793,7 +802,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const marco = p.marco && p.etapa !== 'concluido' ? `<span class="marco">Marco ${fmtDate(p.marco)}</span>` : '';
     const dA = diasAguardando(p);
     const dE = diasNaEtapa(p);
-    const since = p.etapa !== 'concluido' && !(compact && dE === 0) ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
+    const since = p.acompanhar && p.etapa !== 'concluido' && !(compact && dE === 0) ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
     const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
     const due = `<span class="due ${dc}">${p.prazo && state.view === 'prazos' ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
@@ -985,7 +994,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
         <div class="field"><label for="nf-data">Data</label><input type="date" id="nf-data" data-nf="data" value="${esc(d.data)}"></div>
         <div class="field"><label for="nf-tipo">Tipo</label><select id="nf-tipo" data-nf="tipo">${Object.keys(NOTA_TIPOS).map(k => `<option value="${k}" ${k === d.tipo ? 'selected' : ''}>${NOTA_TIPOS[k]}</option>`).join('')}</select></div>
       </div>
-      <div class="field"><label for="nf-texto">Texto</label><textarea id="nf-texto" data-nf="texto" rows="${Math.min(18, Math.max(6, String(d.texto || '').split('\n').length + 1))}" placeholder="Decisões, encaminhamentos, quem ficou com o quê. Use - para tópicos e [ ] para checklist.">${esc(d.texto)}</textarea></div>
+      <div class="field"><label for="nf-texto">Texto</label><div class="fmt-bar" role="toolbar" aria-label="Formatação" data-for="nf-texto"><button type="button" data-fmt="b" aria-label="Negrito" title="Negrito"><b>B</b></button><button type="button" data-fmt="i" aria-label="Itálico" title="Itálico"><i>I</i></button><button type="button" data-fmt="u" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button><span class="sep" aria-hidden="true"></span><button type="button" data-fmt="ul" aria-label="Tópico" title="Tópico"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></button><button type="button" data-fmt="check" aria-label="Checklist" title="Checklist"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="6" height="6" rx="1.2"/><path d="M4.5 8l1.5 1.5L8.5 6.5M12 8h9M12 16h9"/><rect x="3" y="13" width="6" height="6" rx="1.2"/></svg></button></div><textarea id="nf-texto" data-nf="texto" rows="${Math.min(18, Math.max(6, String(d.texto || '').split('\n').length + 1))}" placeholder="Decisões, encaminhamentos, quem ficou com o quê. Use - para tópicos e [ ] para checklist.">${esc(d.texto)}</textarea></div>
       <div class="nota-acts"><button class="btn" type="button" id="notaSalvar">${I.check}<span>Salvar nota</span></button><button class="btn text" type="button" id="notaCancelar">Cancelar</button>${d.id ? `<button class="btn danger" type="button" id="notaExcluir">${I.trash}<span>Excluir</span></button>` : ''}</div>
     </div>`;
   }
@@ -1014,6 +1023,21 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     if (state.db) { try { await state.db.doc('projetos/' + id).delete(); } catch (e) { /* já refletido localmente */ } }
   }
 
+  // Barra de formatação: envolve a seleção com marcadores ou prefixa as linhas selecionadas
+  function applyFmt(ta, kind) {
+    const v = ta.value, s0 = ta.selectionStart, e0 = ta.selectionEnd;
+    if (kind === 'b' || kind === 'i' || kind === 'u') {
+      const m = { b: '**', i: '*', u: '__' }[kind]; const sel = v.slice(s0, e0) || 'texto';
+      ta.value = v.slice(0, s0) + m + sel + m + v.slice(e0); ta.setSelectionRange(s0 + m.length, s0 + m.length + sel.length);
+    } else {
+      const ls = v.lastIndexOf('\n', s0 - 1) + 1; let le = v.indexOf('\n', e0); if (le === -1) le = v.length;
+      const pre = kind === 'check' ? '- [ ] ' : '- ';
+      const nb = v.slice(ls, le).split('\n').map(l => pre + l.replace(/^\s*(?:[-*•]\s*)?(?:\[[ xX]\]\s*)?/, '')).join('\n');
+      ta.value = v.slice(0, ls) + nb + v.slice(le); ta.setSelectionRange(ls + nb.length, ls + nb.length);
+    }
+    ta.focus(); ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
   // ---------- Gaveta de edição ----------
   function openDrawer(id) { state.selected = id; state.ui.moreOpen = false; state.ui.agoraPendente = null; state.opener = document.activeElement; document.body.classList.add('has-drawer'); renderDrawer(state.projects[id], false); }
   const isBlank = p => p && !String(p.titulo || '').trim() && !String(p.proximoPasso || '').trim() && !String(p.notas || '').trim() && !(p.tags && p.tags.length);
@@ -1024,7 +1048,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const o = state.opener; state.opener = null;
     if (o && document.contains(o)) o.focus(); else { const r = $('.row'); if (r) r.focus(); }
   }
-  const saudeLineHTML = p => { const sd = saudeInfo(p); return `<span class="dot ${sd.s}" aria-hidden="true"></span><b>${SAUDE[sd.s]}</b>${sd.why ? `<span class="why">, ${esc(sd.why)}</span>` : ''}<span class="how">Crítico: aguardando alguém há mais de ${DIAS_PARADO} dias ou marco vencido há mais de ${DIAS_MARCO}. Atrasado: marco vencido. Atenção: sem próximo passo, mais de ${DIAS_PARADO} dias no mesmo status ou marco em até ${DIAS_MARCO} dias.</span>`; };
+  const saudeLineHTML = p => { const sd = saudeInfo(p); return `<span class="dot ${sd.s}" aria-hidden="true"></span><b>${SAUDE[sd.s]}</b>${sd.why ? `<span class="why">, ${esc(sd.why)}</span>` : ''}`; };
   function renderDrawer(p, keepFocus) {
     const root = $('#drawerRoot');
     if (keepFocus && root.firstChild && document.activeElement && root.contains(document.activeElement)) return;
@@ -1039,8 +1063,9 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
           <h2 class="sr-only" id="drawerTitle">${p.titulo ? 'Editar ' + esc(p.titulo) : 'Novo projeto'}</h2>
           <div class="field"><input class="big" id="f-titulo" data-f="titulo" value="${esc(p.titulo)}" placeholder="Nome do projeto" aria-label="Nome do projeto"></div>
           <div class="field"><label>Horizonte</label>${seg('horizonte', HORIZ, p.horizonte, false, 'Horizonte')}<div class="meta-line">Agora = prioridades da semana · Próximo = Na fila · Depois = Backlog de ideias</div>${regra}</div>
-          <div class="field"><label id="lbl-saude">Saúde (calculada)</label><div class="saude-line" id="saudeLine" aria-labelledby="lbl-saude">${saudeLineHTML(p)}</div></div>
-          <div class="field"><label for="f-next">Próximo passo</label><textarea id="f-next" class="next" data-f="proximoPasso" rows="${Math.min(10, Math.max(3, String(p.proximoPasso || '').split('\n').length + 1))}" placeholder="Comece com verbo no infinitivo: Aprovar KV, Enviar brief. Use - para tópicos e [ ] para checklist.">${esc(p.proximoPasso)}</textarea></div>
+          <div class="field"><label id="lbl-saude">Saúde (calculada)</label><div class="saude-line" id="saudeLine" aria-labelledby="lbl-saude">${saudeLineHTML(p)}</div>
+            <label class="check-line"><input type="checkbox" id="f-acomp" data-f="acompanhar" ${p.acompanhar ? 'checked' : ''}><span>Acompanhar dias na etapa${p.acompanhar && p.etapaDesde ? `, contando desde ${new Date(p.etapaDesde).toLocaleDateString('pt-BR')}` : ' (conta a partir de hoje; alerta após ' + DIAS_PARADO + ' dias parado)'}</span></label></div>
+          <div class="field"><label for="f-next">Próximo passo</label><div class="fmt-bar" role="toolbar" aria-label="Formatação" data-for="f-next"><button type="button" data-fmt="b" aria-label="Negrito" title="Negrito"><b>B</b></button><button type="button" data-fmt="i" aria-label="Itálico" title="Itálico"><i>I</i></button><button type="button" data-fmt="u" aria-label="Sublinhado" title="Sublinhado"><u>U</u></button><span class="sep" aria-hidden="true"></span><button type="button" data-fmt="ul" aria-label="Tópico" title="Tópico"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></button><button type="button" data-fmt="check" aria-label="Checklist" title="Checklist"><svg class="ic sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="6" height="6" rx="1.2"/><path d="M4.5 8l1.5 1.5L8.5 6.5M12 8h9M12 16h9"/><rect x="3" y="13" width="6" height="6" rx="1.2"/></svg></button></div><textarea id="f-next" class="next" data-f="proximoPasso" rows="${Math.min(10, Math.max(3, String(p.proximoPasso || '').split('\n').length + 1))}" placeholder="Comece com verbo no infinitivo: Aprovar KV, Enviar brief. Use - para tópicos e [ ] para checklist.">${esc(p.proximoPasso)}</textarea></div>
           <div class="grid2">
             <div class="field"><label for="f-resp">Responsável</label><input id="f-resp" data-f="responsavel" value="${esc(p.responsavel)}"></div>
             <div class="field"><label for="f-marco">Data do próximo marco</label><input type="date" id="f-marco" data-f="marco" value="${esc(p.marco)}"></div>
@@ -1117,6 +1142,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const bc = e.target.closest('#btnConcluir'); if (bc) { if (bc.dataset.arm) { p.etapa = 'concluido'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = p.etapaDesde; persist(p, true); renderDrawer(p, false); } else { bc.dataset.arm = '1'; bc.querySelector('span').textContent = 'Confirmar: projeto terminou'; } return; }
     if (e.target.closest('#btnReabrir')) { p.etapa = 'em_andamento'; p.etapaDesde = new Date().toISOString(); p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); return; }
     const ex = e.target.closest('#btnExcluir'); if (ex) { if (ex.dataset.arm) { remove(p); } else { ex.dataset.arm = '1'; ex.querySelector('span').textContent = 'Confirmar exclusão'; } return; }
+    const fb = e.target.closest('[data-fmt]'); if (fb) { const ta = document.getElementById(fb.closest('.fmt-bar').dataset.for); if (ta && !ta.disabled) applyFmt(ta, fb.dataset.fmt); return; }
     if (e.target.closest('#notasToggle')) { $('#notasField').classList.remove('collapsed'); $('#f-notas').focus(); return; }
     if (e.target.closest('#moreToggle')) { state.ui.moreOpen = true; $('#moreField').classList.remove('collapsed'); $('#f-etapa').focus(); return; }
   });
@@ -1189,6 +1215,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       if (f === 'tags') p.tags = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
       else if (f === 'aguardando') { const v = e.target.value; const had = String(p.aguardando || '').trim(); if (!v.trim()) { p.aguardando = ''; p.aguardandoDesde = ''; } else { if (!had) p.aguardandoDesde = new Date().toISOString(); p.aguardando = v; } }
       else if (f === 'etapa') { if (e.target.value !== p.etapa) p.etapaDesde = new Date().toISOString(); p.etapa = e.target.value; }
+      else if (f === 'acompanhar') { p.acompanhar = e.target.checked; if (p.acompanhar) p.etapaDesde = new Date().toISOString(); persist(p, true); renderDrawer(p, false); $('#f-acomp').focus(); return; }
       else p[f] = e.target.value;
       if (f === 'frente') { persist(p, true); renderDrawer(p, false); $('#f-frente').focus(); return; }
       if (f === 'etapa') { if (p.etapa === 'concluido') p.concluidoEm = p.concluidoEm || new Date().toISOString(); else p.concluidoEm = ''; persist(p, true); renderDrawer(p, false); $('#f-etapa').focus(); return; }
@@ -1361,7 +1388,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const C = { head: '#1f3864', ink: '#222222', body: '#444444', meta: '#666666' }; // cores do e-mail: o HTML copiado precisa delas inline
     const h2 = t => `<h2 style="${F}font-size:14pt;color:${C.head};margin:18px 0 6px">${esc(t)}</h2>`;
     const li = (inner, sub) => `<li style="${F}font-size:11pt;margin:0 0 6px">${inner}${sub || ''}</li>`;
-    const stepsList = p => { const st = parseSteps(p.proximoPasso); if (!st.length) return ''; return `<ul style="margin:4px 0 0 18px;padding:0">${st.map(x => `<li style="${F}font-size:11pt;color:${C.body};margin:0 0 2px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${esc(x.text)}</li>`).join('')}</ul>`; };
+    const stepsList = p => { const st = parseSteps(p.proximoPasso); if (!st.length) return ''; return `<ul style="margin:4px 0 0 18px;padding:0">${st.map(x => `<li style="${F}font-size:11pt;color:${C.body};margin:0 0 2px;list-style:none">${x.kind === 'check' ? (x.done ? '&#9745; ' : '&#9744; ') : '&#8226; '}${inline(x.text)}</li>`).join('')}</ul>`; };
     let h = `<div style="${F}color:${C.ink}"><h1 style="${F}font-size:16pt;color:${C.head};margin:0 0 2px">Weekly Review, ${esc(weekLabel())}</h1>`;
     h += `<p style="${F}font-size:10pt;color:${C.meta};margin:0 0 12px">Painel Semanal de Pautas</p>`;
     const aviso = String(state.meta._avisos.texto || '').trim();
@@ -1394,7 +1421,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       items.forEach(p => {
         const meta = [p.responsavel ? 'resp. ' + p.responsavel : '', statusTxt(p), p.marco ? 'marco ' + fmtDate(p.marco) : '', p.prazo ? 'prazo ' + fmtDate(p.prazo) : ''].filter(Boolean).join(', ');
         L.push(`• ${p.titulo}${meta ? ', ' + meta : ''}`);
-        parseSteps(p.proximoPasso).forEach(x => L.push(`    ${x.kind === 'check' ? (x.done ? '☑' : '☐') : '-'} ${x.text}`));
+        parseSteps(p.proximoPasso).forEach(x => L.push(`    ${x.kind === 'check' ? (x.done ? '☑' : '☐') : '-'} ${plain(x.text)}`));
       });
       L.push('');
     });
