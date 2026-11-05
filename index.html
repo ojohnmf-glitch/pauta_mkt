@@ -527,7 +527,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
       <button class="tab" role="tab" id="tab-responsaveis" data-view="responsaveis" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 0 1 0 7M21 20c0-3-1.8-5.2-4.5-5.8"/></svg><span>Responsáveis</span><sup id="c-responsaveis"></sup></button>
       <button class="tab" role="tab" id="tab-prazos" data-view="prazos" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Prazos</span><sup id="c-prazos"></sup></button>
       <button class="tab" role="tab" id="tab-concluidos" data-view="concluidos" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Concluídos</span><sup id="c-concluidos"></sup></button>
-      <button class="tab" role="tab" id="tab-notas" data-view="notas" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6zM6 3v18M10 8h5M10 12h5"/></svg><span>Notas</span><sup id="c-notas"></sup></button>
+      <button class="tab" role="tab" id="tab-notas" data-view="notas" aria-selected="false" aria-controls="content" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6zM6 3v18M10 8h5M10 12h5"/></svg><span>Notas e Pautas</span><sup id="c-notas"></sup></button>
     </nav>
   </div>
 </div>
@@ -1045,7 +1045,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const list = notasOrdenadas(); const d = state.ui.notaDraft; const ro = state.canWrite === false;
     const tools = ro || d ? '' : `<div class="nota-tools"><button class="btn" type="button" id="notaNova">${I.plus}<span>Nova nota</span></button><button class="btn text" type="button" id="notaPauta" title="Cria uma nota com o resumo desta semana, como registro da pauta enviada">${I.send}<span>Registrar pauta enviada</span></button></div>`;
     const items = list.length ? list.map(notaHTML).join('') : (d ? '' : '<div class="empty">Nenhuma nota ainda. Registre as reuniões da semana ou guarde o histórico das pautas enviadas.</div>');
-    return `<section class="block">${head('Notas', 'Anotações de reuniões e histórico das pautas enviadas.')}${tools}${d ? notaFormHTML(d) : ''}<div class="notas">${items}</div></section>`;
+    return `<section class="block">${head('Notas e Pautas', 'Anotações de reuniões e histórico das pautas enviadas.')}${tools}${d ? notaFormHTML(d) : ''}<div class="notas">${items}</div></section>`;
   }
   async function persistNota(n) {
     state.notas[n.id] = n; render();
@@ -1156,7 +1156,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const tab = e.target.closest('.tab'); if (tab) { selectTab(tab); return; }
     // Notas
     if (e.target.closest('#notaNova')) { if (state.canWrite === false) return; state.ui.notaDraft = { id: null, titulo: '', data: isoToday(), tipo: 'reuniao', texto: '' }; render(); const t = $('#nf-titulo'); if (t) t.focus(); return; }
-    if (e.target.closest('#notaPauta')) { if (state.canWrite === false) return; state.ui.notaDraft = { id: null, titulo: `Pauta enviada, ${weekLabel()}`, data: isoToday(), tipo: 'pauta', texto: resumoTexto() }; render(); const t = $('#nf-texto'); if (t) t.focus(); return; }
+    if (e.target.closest('#notaPauta')) { if (state.canWrite === false) return; state.ui.notaDraft = { id: null, titulo: `Pauta enviada, ${weekLabel()}`, data: isoToday(), tipo: 'pauta', texto: pautaTexto() }; render(); const t = $('#nf-texto'); if (t) t.focus(); return; }
     const ne = e.target.closest('[data-nota-edit]'); if (ne) { if (state.canWrite === false) return; const n = state.notas[ne.dataset.notaEdit]; if (!n) return; state.ui.notaDraft = { id: n.id, titulo: n.titulo || '', data: n.data || '', tipo: NOTA_TIPOS[n.tipo] ? n.tipo : 'outro', texto: n.texto || '', criadoEm: n.criadoEm }; render(); const f = $('.nota-form'); if (f) { f.scrollIntoView({ block: 'start', behavior: 'smooth' }); const t = $('#nf-titulo'); if (t) t.focus(); } return; }
     if (e.target.closest('#notaCancelar')) { state.ui.notaDraft = null; render(); return; }
     if (e.target.closest('#notaSalvar')) {
@@ -1431,6 +1431,20 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
   }
 
   // ---------- Resumo para e-mail: HTML (Outlook, Gmail) + texto simples ----------
+  // Registro da pauta enviada: só os próximos passos, por frente, do que está em Agora
+  function pautaTexto() {
+    const L = [];
+    resumoDados().frentes.forEach(({ f, items }) => {
+      L.push(f.nome.toUpperCase());
+      items.forEach(p => {
+        const meta = [p.responsavel ? 'resp. ' + p.responsavel : '', String(p.aguardando || '').trim() ? 'aguardando ' + p.aguardando.trim() : ''].filter(Boolean).join(', ');
+        L.push(`• ${p.titulo}${meta ? ', ' + meta : ''}`);
+        parseSteps(p.proximoPasso).filter(x => !(x.kind === 'check' && x.done)).forEach(x => L.push(`    - ${plain(x.text)}`));
+      });
+      L.push('');
+    });
+    return L.join('\n').trim();
+  }
   function resumoDados() {
     const act = active();
     const frentes = FRENTES.map(f => ({ f, items: act.filter(p => p.frente === f.id && p.horizonte === 'agora') })).filter(x => x.items.length);
