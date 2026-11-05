@@ -803,7 +803,7 @@ body.is-dragging .row:hover { background: transparent; margin-inline: 0; padding
     const dA = diasAguardando(p);
     const dE = diasNaEtapa(p);
     const since = p.acompanhar && p.etapa !== 'concluido' && !(compact && dE === 0) ? `<span class="since">${ETAPAS[p.etapa] || esc(p.etapa)} ${dE === 0 ? 'desde hoje' : `há ${dE} dia${dE === 1 ? '' : 's'}`}</span>` : '';
-    const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())} · ${dA}d</span>` : '';
+    const wait = dA != null && p.etapa !== 'concluido' ? `<span class="wait ${dA > DIAS_PARADO ? 'crit' : ''}">aguardando ${esc(p.aguardando.trim())}</span>` : '';
     const due = `<span class="due ${dc}">${p.prazo && state.view === 'prazos' ? `<span><span class="sr-only">Prazo </span>${fmtDate(p.prazo)}${dc === 'late' ? ', atrasado' : dc === 'soon' ? '<span class="sr-only">, vence esta semana</span>' : ''}</span>` : ''}${since}${wait}</span>`;
     const sub = hideWho ? '' : compact ? `<span class="sub"><span class="who">${esc(p.responsavel)}</span></span>` : `<span class="sub"><span class="who">${esc(p.responsavel)}</span>${marco}${p.proximoPasso ? '' : '<span class="none">Próximo passo não definido</span>'}</span>${stepsHTML(p.proximoPasso)}`;
     return `<button class="row${p.etapa === 'pausado' ? ' paused' : ''}" data-open="${esc(p.id)}" type="button">
